@@ -1,4 +1,4 @@
-import express, { urlencoded } from "express";
+import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -8,37 +8,50 @@ import postRoute from "./routes/post.route.js";
 import messageRoute from "./routes/message.route.js";
 import { app, server } from "./socket/socket.js";
 import path from "path";
- 
+import fs from "fs";
+
 dotenv.config();
 
-
 const PORT = process.env.PORT || 3000;
-
 const __dirname = path.resolve();
 
-//middlewares
+// ----- Middlewares -----
 app.use(express.json());
 app.use(cookieParser());
-app.use(urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ CORS FIX (works on Render + localhost)
 const corsOptions = {
-    origin: process.env.URL,
-    credentials: true
-}
+    origin: true,
+    credentials: true,
+};
+
 app.use(cors(corsOptions));
 
-// yha pr apni api ayengi
+// ----- API ROUTES -----
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/post", postRoute);
 app.use("/api/v1/message", messageRoute);
 
+// ----- FRONTEND SERVING (SAFE MODE) -----
+const frontendPath = path.join(__dirname, "frontend", "dist");
 
-app.use(express.static(path.join(__dirname, "/frontend/dist")));
-app.get("*", (req,res)=>{
-    res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
-})
+if (fs.existsSync(frontendPath)) {
 
+    console.log("✅ Frontend build found, serving UI");
 
-server.listen(PORT, () => {
-    connectDB();
-    console.log(`Server listen at port ${PORT}`);
+    app.use(express.static(frontendPath));
+
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(frontendPath, "index.html"));
+    });
+
+} else {
+    console.warn("⚠️ Frontend build not found, only API is running");
+}
+
+// ----- SERVER START -----
+server.listen(PORT, async () => {
+    await connectDB();
+    console.log(`✅ Server running at port ${PORT}`);
 });
