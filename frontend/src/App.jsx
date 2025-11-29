@@ -48,7 +48,7 @@ function App() {
     // ✅ Prevent duplicate socket creation
     if (socketRef.current) return
 
-    const SOCKET_URL = "http://localhost:3000"
+    const SOCKET_URL = "https://social-h7kq.onrender.com"
 
     socketRef.current = io(SOCKET_URL, {
       query: { userId: user._id },
