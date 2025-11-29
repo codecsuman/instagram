@@ -21,11 +21,11 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  process.env.CLIENT_URL, // your Vercel frontend URL
-  process.env.RENDER_EXTERNAL_URL // optional: Render domain
+  process.env.CLIENT_URL,          // Vercel frontend
+  process.env.RENDER_EXTERNAL_URL, // Render preview domain
 ].filter(Boolean);
 
-// 🚀 Important for cookies on Render
+// 🚀 Important for cookies on Render (HTTPS proxy)
 app.set("trust proxy", 1);
 
 // 🚀 Middleware
@@ -33,6 +33,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// 🚀 CORS
 app.use(
   cors({
     origin: allowedOrigins,
@@ -51,10 +52,10 @@ app.get("/", (req, res) => {
   res.send("Backend is Live ✅");
 });
 
-// 🚀 Init Socket.io (WITH CORS)
+// 🚀 Init Socket.io Server
 initSocket(server, allowedOrigins);
 
-// 🚀 Start Server After DB Connected
+// 🚀 Connect DB + Start Server
 const startServer = async () => {
   try {
     await connectDB();

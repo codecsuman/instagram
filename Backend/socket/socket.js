@@ -6,34 +6,40 @@ const userSocketMap = {}; // userId -> socketId
 
 export const initSocket = (server, allowedOrigins) => {
 
-  const origin =
-    process.env.NODE_ENV === "production"
-      ? allowedOrigins[0] // In production allow ONLY your Vercel frontend
-      : allowedOrigins;   // In dev allow array
-
   io = new Server(server, {
     cors: {
-      origin,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.log("❌ BLOCKED SOCKET ORIGIN:", origin);
+          return callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
     },
-    transports: ["websocket", "polling"], // important for vercel
+    transports: ["websocket"], // most stable for Vercel
     pingTimeout: 60000,
   });
 
   io.on("connection", (socket) => {
     console.log("⚡ Socket Connected:", socket.id);
 
-    let userId = socket.handshake.query.userId;
+    const userId = socket.handshake.query.userId;
 
-    // Fix: prevent "undefined" userId strings
+    // Prevent invalid IDs
     if (!userId || userId === "undefined" || userId === "null") {
-      console.log("⚠️ Invalid userId sent to socket");
+      console.log("⚠️ Invalid userId sent, disconnecting socket");
+      socket.disconnect(true);
       return;
     }
 
     userSocketMap[userId] = socket.id;
 
-    // Send online users list
+    // Notify online users
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
     socket.on("disconnect", () => {
@@ -48,10 +54,4 @@ export const initSocket = (server, allowedOrigins) => {
 
 export const getReceiverSocketId = (receiverId) => userSocketMap[receiverId];
 
-export const getIO = () => {
-  if (!io) {
-    console.error("⚠️ Socket.io not initialized!");
-    return null;
-  }
-  return io;
-};
+export const getIO = () => io;
