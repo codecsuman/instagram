@@ -1,4 +1,3 @@
-// Backend/utils/datauri.js
 import DataUriParser from "datauri/parser.js";
 import path from "path";
 

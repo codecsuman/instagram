@@ -7,51 +7,52 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     minlength: 3,
-    maxlength: 20
+    maxlength: 20,
   },
   email: {
     type: String,
     required: true,
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
+    select: false,   // ✅ IMPORTANT
   },
   profilePicture: {
     type: String,
-    default: ""
+    default: "",
   },
   bio: {
     type: String,
     default: "",
-    maxlength: 200
+    maxlength: 200,
   },
   gender: {
     type: String,
-    enum: ["male", "female", "other"]
+    enum: ["male", "female", "other"],
   },
   followers: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
   }],
   following: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
   }],
   posts: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Post"
+    ref: "Post",
   }],
   bookmarks: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Post"
-  }]
+    ref: "Post",
+  }],
 }, { timestamps: true });
 
-// ✅ Fast profile lookup
+// ✅ Fast lookup
 userSchema.index({ username: 1 });
 userSchema.index({ email: 1 });
 

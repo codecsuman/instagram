@@ -1,42 +1,44 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://social-h7kq.onrender.com",
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true // ✅ Important for cookies on Render
 });
 
-// ✅ AUTO HANDLE FORM DATA PROPERLY
-api.interceptors.request.use(
-  (config) => {
-    if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"]; // Let browser set boundary
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+/* ====================== REQUEST INTERCEPTOR ====================== */
+api.interceptors.request.use((config) => {
+
+  // ✅ Inject Bearer token fallback
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // ✅ Let browser handle FormData boundaries properly
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+
+  return config;
+
+}, (error) => Promise.reject(error));
 
 
-// ✅ SMART ERROR HANDLING (NO FAKE ERRORS)
+/* ====================== RESPONSE INTERCEPTOR ====================== */
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
+  (response) => response,
+  (error) => {
 
-    // ✅ Ignore canceled requests (not real errors)
-    if (err.code === "ERR_CANCELED") {
-      console.warn("⚠ Request canceled");
-      return Promise.reject(err);
-    }
+    if (error.code === "ERR_CANCELED") return Promise.reject(error);
 
-    // ✅ Show real API errors cleanly
     console.error("❌ API ERROR:", {
-      status: err.response?.status,
-      message: err.response?.data?.message || err.message,
-      data: err.response?.data,
-      url: err.config?.url
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.response?.data?.message || error.message
     });
 
-    return Promise.reject(err);
+    return Promise.reject(error);
   }
 );
 

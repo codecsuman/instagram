@@ -19,39 +19,28 @@ const Post = ({ post }) => {
 
   const [text, setText] = useState("")
   const [open, setOpen] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [postLike, setPostLike] = useState(0)
 
-  const [liked, setLiked] = useState((post.likes || []).includes(user?._id))
-  const [postLike, setPostLike] = useState(post.likes?.length || 0)
-  const [comments, setComments] = useState(post.comments || [])
-
-  // ✅ Sync local state when Redux updates
   useEffect(() => {
-    setLiked((post.likes || []).includes(user?._id))
+    setLiked(post.likes?.includes(user?._id))
     setPostLike(post.likes?.length || 0)
-    setComments(post.comments || [])
-  }, [post.likes, post.comments, user?._id])
+  }, [post, user])
 
   const likeOrDislikeHandler = async () => {
     try {
-      const action = liked ? 'dislike' : 'like'
+      const action = liked ? "dislike" : "like"
       const res = await api.get(`/api/v1/post/${post._id}/${action}`)
 
-      if (res.data?.success) {
-
-        const updatedPostData = posts.map(p =>
+      if (res?.data?.success) {
+        const updated = posts.map(p =>
           p._id === post._id
-            ? {
-                ...p,
-                likes: liked
-                  ? p.likes.filter(id => id !== user._id)
-                  : [...p.likes, user._id]
-              }
+            ? { ...p, likes: res.data.likes }
             : p
         )
-
-        dispatch(setPosts(updatedPostData))
+        dispatch(setPosts(updated))
       }
-    } catch (error) {
+    } catch {
       toast.error("Like failed")
     }
   }
@@ -61,183 +50,88 @@ const Post = ({ post }) => {
 
     try {
       const res = await api.post(`/api/v1/post/${post._id}/comment`, { text })
-
-      if (res.data?.success) {
-
-        const updatedPostData = posts.map(p =>
+      if (res?.data?.success) {
+        const updated = posts.map(p =>
           p._id === post._id
-            ? { ...p, comments: [...p.comments, res.data.comment] }
+            ? { ...p, comments: res.data.comments }
             : p
         )
-
-        dispatch(setPosts(updatedPostData))
-        toast.success(res.data.message || "Comment added")
+        dispatch(setPosts(updated))
         setText("")
       }
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Comment failed")
+    } catch {
+      toast.error("Comment failed")
     }
   }
 
   const deletePostHandler = async () => {
     try {
       const res = await api.delete(`/api/v1/post/delete/${post._id}`)
-
-      if (res.data?.success) {
-        const updatedPostData = posts.filter(p => p._id !== post._id)
-        dispatch(setPosts(updatedPostData))
+      if (res?.data?.success) {
+        dispatch(setPosts(posts.filter(p => p._id !== post._id)))
         setOpen(false)
-        toast.success(res.data.message || "Post deleted")
       }
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Delete failed")
-    }
-  }
-
-  const bookmarkHandler = async () => {
-    try {
-      const res = await api.get(`/api/v1/post/${post._id}/bookmark`)
-      if (res.data?.success) toast.success(res.data.message)
-    } catch (error) {
-      toast.error("Bookmark failed")
+    } catch {
+      toast.error("Delete failed")
     }
   }
 
   return (
-    <div className="my-8 w-full max-w-sm mx-auto">
+    <div className="max-w-sm mx-auto my-6">
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={post.author?.profilePicture} />
-            <AvatarFallback>
-              {post.author?.username?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
+            <AvatarFallback>{post.author?.username?.[0]}</AvatarFallback>
           </Avatar>
-
-          <div className="flex items-center gap-2">
-            <h1 className="font-medium">{post.author?.username}</h1>
-            {user?._id === post.author?._id && (
-              <Badge variant="secondary">Author</Badge>
-            )}
-          </div>
+          <h1 className="font-medium">{post.author?.username}</h1>
+          {user?._id === post.author?._id && <Badge>Author</Badge>}
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <MoreHorizontal className="cursor-pointer" />
+          <DialogTrigger>
+            <MoreHorizontal />
           </DialogTrigger>
-
-          <DialogContent className="flex flex-col items-center text-sm text-center">
-
-            {post.author?._id !== user?._id && (
-              <Button variant="ghost" className="text-[#ED4956] font-bold">
-                Unfollow
-              </Button>
-            )}
-
-            <Button variant="ghost">Add to favorites</Button>
-
+          <DialogContent>
             {user?._id === post.author?._id && (
-              <Button
-                onClick={deletePostHandler}
-                variant="ghost"
-                className="text-red-500"
-              >
+              <Button onClick={deletePostHandler} className="text-red-500">
                 Delete
               </Button>
             )}
           </DialogContent>
         </Dialog>
-
       </div>
 
-      {/* IMAGE */}
-      <img
-        className="rounded-sm my-2 w-full aspect-square object-cover"
-        src={post.image || "https://via.placeholder.com/300"}
-        alt="post"
+      <img className="w-full aspect-square object-cover mt-2" src={post.image} />
+
+      <div className="flex gap-3 mt-2">
+        {liked
+          ? <FaHeart onClick={likeOrDislikeHandler} className="text-red-500 cursor-pointer" />
+          : <FaRegHeart onClick={likeOrDislikeHandler} className="cursor-pointer" />
+        }
+        <MessageCircle onClick={() => setOpen(true)} />
+        <Send />
+        <Bookmark />
+      </div>
+
+      <p className="mt-1"><b>{postLike}</b> likes</p>
+      <p><b>{post.author?.username}</b> {post.caption}</p>
+
+      <input
+        className="mt-2 w-full outline-none"
+        placeholder="Add comment..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
       />
 
-      {/* ACTION BAR */}
-      <div className="flex items-center justify-between my-2">
-        <div className="flex items-center gap-3">
-
-          {liked ? (
-            <FaHeart
-              onClick={likeOrDislikeHandler}
-              size={24}
-              className="cursor-pointer text-red-600"
-            />
-          ) : (
-            <FaRegHeart
-              onClick={likeOrDislikeHandler}
-              size={22}
-              className="cursor-pointer hover:text-gray-600"
-            />
-          )}
-
-          <MessageCircle
-            className="cursor-pointer hover:text-gray-600"
-            onClick={() => {
-              dispatch(setSelectedPost(post))
-              setOpen(true)
-            }}
-          />
-
-          <Send className="cursor-pointer hover:text-gray-600" />
-        </div>
-
-        <Bookmark
-          onClick={bookmarkHandler}
-          className="cursor-pointer hover:text-gray-600"
-        />
-      </div>
-
-      <span className="font-medium block mb-2">
-        {postLike} likes
-      </span>
-
-      <p>
-        <span className="font-medium mr-2">{post.author?.username}</span>
-        {post.caption}
-      </p>
-
-      {(post.comments?.length || 0) > 0 && (
-        <span
-          onClick={() => {
-            dispatch(setSelectedPost(post))
-            setOpen(true)
-          }}
-          className="cursor-pointer text-sm text-gray-400"
-        >
-          View all {post.comments.length} comments
+      {text && (
+        <span onClick={commentHandler} className="text-blue-500 cursor-pointer">
+          Post
         </span>
       )}
 
       <CommentDialog open={open} setOpen={setOpen} />
-
-      {/* COMMENT INPUT */}
-      <div className="flex items-center justify-between mt-2">
-        <input
-          type="text"
-          placeholder="Add a comment..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="outline-none text-sm w-full"
-        />
-
-        {text.trim() && (
-          <span
-            onClick={commentHandler}
-            className="text-[#3BADF8] cursor-pointer ml-2"
-          >
-            Post
-          </span>
-        )}
-      </div>
-
     </div>
   )
 }

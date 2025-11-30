@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { setPosts } from '@/redux/postSlice'
 
 const CreatePost = ({ open, setOpen }) => {
+
   const imageRef = useRef(null)
   const [file, setFile] = useState(null)
   const [caption, setCaption] = useState("")
@@ -25,20 +26,22 @@ const CreatePost = ({ open, setOpen }) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
-    // ✅ Only images allowed (max 5MB)
+    // ✅ Validate Image Type
     if (!selectedFile.type.startsWith("image/")) {
       toast.error("Only image files allowed")
       return
     }
 
+    // ✅ Size Limit: 5MB
     if (selectedFile.size > 5 * 1024 * 1024) {
       toast.error("Image must be less than 5MB")
       return
     }
 
+    const preview = await readFileAsDataURL(selectedFile)
+
     setFile(selectedFile)
-    const dataUrl = await readFileAsDataURL(selectedFile)
-    setImagePreview(dataUrl)
+    setImagePreview(preview)
   }
 
   const createPostHandler = async () => {
@@ -48,22 +51,22 @@ const CreatePost = ({ open, setOpen }) => {
       return
     }
 
-    const formData = new FormData()
-    formData.append("caption", caption)
-    if (file) formData.append("image", file)
+    setLoading(true)
 
     try {
-      setLoading(true)
+      const formData = new FormData()
+      formData.append("caption", caption)
+      if (file) formData.append("image", file)
 
-      const res = await api.post("/api/v1/post/addpost", formData) // ✅ no headers
+      const res = await api.post("/api/v1/post/addpost", formData)
 
-      if (res.data?.success) {
+      if (res?.data?.success) {
         dispatch(setPosts([res.data.post, ...posts]))
-        toast.success(res.data.message || "Post created")
+        toast.success("Post created successfully")
         setOpen(false)
         setCaption("")
-        setImagePreview("")
         setFile(null)
+        setImagePreview("")
       }
 
     } catch (error) {
@@ -84,9 +87,7 @@ const CreatePost = ({ open, setOpen }) => {
         <div className="flex gap-3 items-center">
           <Avatar>
             <AvatarImage src={user?.profilePicture} />
-            <AvatarFallback>
-              {user?.username?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
+            <AvatarFallback>{user?.username?.[0] || "U"}</AvatarFallback>
           </Avatar>
 
           <div>
@@ -102,17 +103,13 @@ const CreatePost = ({ open, setOpen }) => {
         <Textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          className="focus-visible:ring-transparent border-none"
           placeholder="Write a caption..."
+          className="border-none focus-visible:ring-transparent"
         />
 
         {imagePreview && (
           <div className="w-full h-64 flex items-center justify-center">
-            <img
-              src={imagePreview}
-              alt="preview"
-              className="object-cover h-full w-full rounded-md"
-            />
+            <img src={imagePreview} className="w-full h-full object-cover rounded" />
           </div>
         )}
 
@@ -124,25 +121,18 @@ const CreatePost = ({ open, setOpen }) => {
           onChange={fileChangeHandler}
         />
 
-        <Button
-          type="button"
-          onClick={() => imageRef.current.click()}
-          className="w-fit mx-auto bg-[#0095F6] hover:bg-[#258bcf]"
-        >
-          Select from computer
+        <Button onClick={() => imageRef.current.click()} className="bg-[#0095F6]">
+          Select Image
         </Button>
 
-        {imagePreview && (
-          loading ? (
-            <Button disabled>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Uploading...
-            </Button>
-          ) : (
-            <Button onClick={createPostHandler} className="w-full">
-              Post
-            </Button>
-          )
+        {loading ? (
+          <Button disabled className="w-full">
+            <Loader2 className="animate-spin mr-2" /> Uploading...
+          </Button>
+        ) : (
+          <Button onClick={createPostHandler} className="w-full">
+            Post
+          </Button>
         )}
 
       </DialogContent>

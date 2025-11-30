@@ -36,17 +36,30 @@ const Login = () => {
         password: input.password.trim()
       })
 
-      if (res.data?.success) {
-        dispatch(setAuthUser(res.data.user))
+      if (res?.data?.success) {
+
+        // ✅ STORE TOKEN IF PRESENT
+        if (res.data.token) {
+          localStorage.setItem("token", res.data.token)
+        }
+
+        // ✅ STORE USER
+        dispatch(setAuthUser({
+          ...res.data.user,
+          token: res.data.token || null
+        }))
+
         toast.success(res.data.message || "Login successful")
         navigate("/", { replace: true })
         setInput({ email: "", password: "" })
       }
+
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
         error?.message ||
         "Login failed"
+
       toast.error(msg)
     } finally {
       setLoading(false)

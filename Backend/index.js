@@ -14,56 +14,63 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-// 🚀 PORT
-const PORT = process.env.PORT || 5000;
+// ✅ PORT
+const PORT = process.env.PORT || 10000;
 
-// 🚀 Allowed Origins (Local + Vercel + Render)
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  process.env.CLIENT_URL,          // Vercel frontend
-  process.env.RENDER_EXTERNAL_URL, // Render preview domain
-].filter(Boolean);
-
-// 🚀 Important for cookies on Render (HTTPS proxy)
+// ✅ TRUST PROXY (IMPORTANT FOR COOKIES ON RENDER)
 app.set("trust proxy", 1);
 
-// 🚀 Middleware
+// ✅ ALLOWED ORIGINS
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://instagram-dun-nine.vercel.app",
+  process.env.CLIENT_URL
+].filter(Boolean);
+
+// ✅ CORS CONFIG (FIXED)
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow Postman/mobile
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.error("❌ CORS BLOCKED:", origin);
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: "GET,POST,PUT,DELETE",
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// ✅ BODY PARSERS
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 🚀 CORS
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
-
-// 🚀 Routes
+// ✅ ROUTES
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/post", postRoute);
 app.use("/api/v1/message", messageRoute);
 
-// 🚀 Health Check
+// ✅ HEALTH CHECK
 app.get("/", (req, res) => {
-  res.send("Backend is Live ✅");
+  res.status(200).send("✅ Backend is Running");
 });
 
-// 🚀 Init Socket.io Server
+// ✅ SOCKET.IO
 initSocket(server, allowedOrigins);
 
-// 🚀 Connect DB + Start Server
+// ✅ SERVER START
 const startServer = async () => {
   try {
     await connectDB();
     server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`✅ Server running on port ${PORT}`);
     });
-  } catch (error) {
-    console.error("❌ Failed to start server:", error.message);
+  } catch (err) {
+    console.error("❌ Failed to start server:", err.message);
     process.exit(1);
   }
 };

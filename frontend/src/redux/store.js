@@ -1,11 +1,11 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit"
-import authSlice from "./authSlice.js"
-import postSlice from "./postSlice.js"
-import socketSlice from "./socketSlice.js"
-import chatSlice from "./chatSlice.js"
-import rtnSlice from "./rtnSlice.js"
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import authSlice from "./authSlice.js";
+import postSlice from "./postSlice.js";
+import socketSlice from "./socketSlice.js";
+import chatSlice from "./chatSlice.js";
+import rtnSlice from "./rtnSlice.js";
 
-import { 
+import {
   persistReducer,
   FLUSH,
   REHYDRATE,
@@ -13,43 +13,45 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-} from "redux-persist"
+} from "redux-persist";
 
-import storage from "redux-persist/lib/storage"
+import storage from "redux-persist/lib/storage";
 
-// ✅ Persist only safe data (NOT socket)
+// ✅ STORE ONLY AUTH
 const persistConfig = {
   key: "root",
   version: 1,
   storage,
-  whitelist: ["auth", "chat", "post"],  // ✅ DO NOT persist socket
-}
+  whitelist: ["auth"],
+};
 
 const rootReducer = combineReducers({
   auth: authSlice,
   post: postSlice,
   chat: chatSlice,
   realTimeNotification: rtnSlice,
-  socketio: socketSlice, // NOT persisted now
-})
+  socketio: socketSlice,
+});
 
-const persistedReducer = persistReducer(persistConfig, rootReducer)
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-const store = configureStore({
+export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
+        // ✅ Fix Redux-Persist warnings
         ignoredActions: [
           FLUSH,
           REHYDRATE,
           PAUSE,
           PERSIST,
           PURGE,
-          REGISTER
+          REGISTER,
         ],
       },
+      immutableCheck: false   // ✅ prevent console noise
     }),
-})
+});
 
-export default store
+export default store;

@@ -4,28 +4,28 @@ const postSchema = new mongoose.Schema({
   caption: {
     type: String,
     default: "",
-    trim: true
+    trim: true,
   },
   image: {
     type: String,
-    required: true
+    required: true,
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: true,
   },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
   }],
   comments: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Comment"
+    ref: "Comment",
   }]
 }, { timestamps: true });
 
-// ✅ Fast feed loading
+// ✅ Fast feed
 postSchema.index({ createdAt: -1 });
 
 export const Post = mongoose.model("Post", postSchema);

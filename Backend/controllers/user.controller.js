@@ -6,15 +6,16 @@ import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 import { getReceiverSocketId, getIO } from "../socket/socket.js";
 
+// ✅ COOKIE OPTIONS (PRODUCTION SAFE)
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  sameSite: "None",
+  path: "/",
   maxAge: 24 * 60 * 60 * 1000,
 };
 
-
-/* ========================= REGISTER ========================= */
+/* ================= REGISTER ================= */
 export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -35,12 +36,7 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    await User.create({
-      username,
-      email,
-      password: hashedPassword
-    });
+    await User.create({ username, email, password: hashedPassword });
 
     return res.status(201).json({
       success: true,
@@ -48,13 +44,16 @@ export const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Register error:", error.message);
-    return res.status(500).json({ success: false });
+    console.error("Register error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Registration failed"
+    });
   }
 };
 
 
-/* ========================= LOGIN ========================= */
+/* ================= LOGIN ================= */
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -62,11 +61,11 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password required"
+        message: "Email and password are required"
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -82,10 +81,14 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
-      expiresIn: "1d"
-    });
+    // ✅ Generate token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.SECRET_KEY,
+      { expiresIn: "1d" }
+    );
 
+    // ✅ Populate posts
     const populatedPosts = await Promise.all(
       user.posts.map(id => Post.findById(id))
     );
@@ -98,42 +101,47 @@ export const login = async (req, res) => {
       bio: user.bio,
       followers: user.followers,
       following: user.following,
-      posts: populatedPosts
+      posts: populatedPosts,
     };
 
+    // ✅ Set cookie
     res.cookie("token", token, cookieOptions);
 
     return res.status(200).json({
       success: true,
-      message: `Welcome back ${user.username}`,
+      message: "Login successful",
       user: safeUser
     });
 
   } catch (error) {
-    console.error("Login error:", error.message);
-    return res.status(500).json({ success: false });
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Login failed"
+    });
   }
 };
 
 
-/* ========================= LOGOUT ========================= */
+/* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
   try {
     res.clearCookie("token", cookieOptions);
-
     return res.status(200).json({
       success: true,
       message: "Logged out successfully"
     });
-
   } catch (error) {
-    console.error("Logout error:", error.message);
-    return res.status(500).json({ success: false });
+    console.error("Logout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Logout failed"
+    });
   }
 };
 
 
-/* ========================= PROFILE ========================= */
+/* ================= PROFILE ================= */
 export const getProfile = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -144,29 +152,39 @@ export const getProfile = async (req, res) => {
       .select("-password");
 
     if (!user) {
-      return res.status(404).json({ success: false });
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
 
-    return res.status(200).json({ success: true, user });
+    return res.status(200).json({
+      success: true,
+      user
+    });
 
   } catch (error) {
-    console.error("Get profile error:", error.message);
-    res.status(500).json({ success: false });
+    console.error("Profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to load profile"
+    });
   }
 };
 
 
-/* ========================= EDIT PROFILE ========================= */
+/* ================= EDIT PROFILE ================= */
 export const editProfile = async (req, res) => {
   try {
     const userId = req.id;
     const { bio, gender } = req.body;
-
     let cloudImage;
 
     if (req.file) {
       const fileUri = getDataUri(req.file);
-      const upload = await cloudinary.uploader.upload(fileUri);
+      const upload = await cloudinary.uploader.upload(fileUri, {
+        folder: "avatars",
+      });
       cloudImage = upload.secure_url;
     }
 
@@ -181,32 +199,36 @@ export const editProfile = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
+      message: "Profile updated",
       user
     });
 
   } catch (error) {
-    console.error("Edit profile error:", error.message);
-    res.status(500).json({ success: false });
+    console.error("Edit profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Update failed"
+    });
   }
 };
 
 
-/* ========================= SUGGESTED USERS ========================= */
+/* ================= SUGGESTED USERS ================= */
 export const getSuggestedUsers = async (req, res) => {
   try {
-    const users = await User.find({ _id: { $ne: req.id } })
-      .select("-password");
-
-    return res.status(200).json({ success: true, users });
-
+    const users = await User.find({ _id: { $ne: req.id } }).select("-password");
+    res.status(200).json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error("Suggested users error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users"
+    });
   }
 };
 
 
-/* ========================= FOLLOW / UNFOLLOW ========================= */
+/* ================= FOLLOW / UNFOLLOW ================= */
 export const followOrUnfollow = async (req, res) => {
   try {
     const userId = req.id;
@@ -215,7 +237,7 @@ export const followOrUnfollow = async (req, res) => {
     if (userId === targetId) {
       return res.status(400).json({
         success: false,
-        message: "Cannot follow yourself"
+        message: "Invalid operation"
       });
     }
 
@@ -223,7 +245,10 @@ export const followOrUnfollow = async (req, res) => {
     const targetUser = await User.findById(targetId);
 
     if (!currentUser || !targetUser) {
-      return res.status(404).json({ success: false });
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
 
     const isFollowing = currentUser.following.includes(targetId);
@@ -232,31 +257,38 @@ export const followOrUnfollow = async (req, res) => {
       currentUser.following.pull(targetId);
       targetUser.followers.pull(userId);
       await Promise.all([currentUser.save(), targetUser.save()]);
-      return res.status(200).json({ success: true, message: "Unfollowed" });
+      return res.json({
+        success: true,
+        message: "Unfollowed"
+      });
     }
 
     currentUser.following.push(targetId);
     targetUser.followers.push(userId);
     await Promise.all([currentUser.save(), targetUser.save()]);
 
+    // ✅ Realtime notification
     const socketId = getReceiverSocketId(targetId);
     const io = getIO();
+    io?.to(socketId)?.emit("notification", {
+      type: "follow",
+      userId,
+      userDetails: {
+        username: currentUser.username,
+        profilePicture: currentUser.profilePicture
+      }
+    });
 
-    if (socketId && io) {
-      io.to(socketId).emit("notification", {
-        type: "follow",
-        userId,
-        userDetails: {
-          username: currentUser.username,
-          profilePicture: currentUser.profilePicture
-        }
-      });
-    }
-
-    return res.status(200).json({ success: true, message: "Followed" });
+    return res.json({
+      success: true,
+      message: "Followed"
+    });
 
   } catch (error) {
-    console.error("Follow error:", error.message);
-    res.status(500).json({ success: false });
+    console.error("Follow error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Follow failed"
+    });
   }
 };
