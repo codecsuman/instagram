@@ -1,14 +1,12 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Express backend for my project",
+  "description": "Express backend for Instagram clone",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "NODE_ENV=production node index.js",
-    "dev": "nodemon index.js",
-    "lint": "echo \"No linting configured\"",
-    "build": "echo \"No build required for backend\""
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "author": "Suman Jhanp",
   "license": "MIT",
@@ -22,16 +20,13 @@
     "express": "^4.21.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.2.1",
-    "ffmpeg-static": "^5.3.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.18.0",
     "mongoose": "^8.18.0",
-    "multer": "^2.0.2",
-    "path-to-regexp": "^6.3.0",
+    "multer": "^1.4.5-lts.1",
     "sharp": "^0.34.3",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
     "streamifier": "^0.1.1",
     "xss-clean": "^0.1.4"
   },
