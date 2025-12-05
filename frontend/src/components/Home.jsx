@@ -1,24 +1,23 @@
-import Feed from './Feed'
-import { Outlet } from 'react-router-dom'
-import RightSidebar from './RightSidebar'
-import useGetAllPost from '@/hooks/useGetAllPost'
-import useGetSuggestedUsers from '@/hooks/useGetSuggestedUsers'
+import React from "react";
+import Feed from "./Feed";
+import RightSidebar from "./RightSidebar";
 
 const Home = () => {
-
-  // ✅ Call hooks directly at top level
-  useGetAllPost()
-  useGetSuggestedUsers()
-
   return (
-    <div className="flex">
-      <div className="flex-grow">
+    <div className="flex w-full justify-center">
+      
+      {/* FEED SECTION */}
+      <div className="flex-grow max-w-2xl">
         <Feed />
-        <Outlet />
       </div>
-      <RightSidebar />
-    </div>
-  )
-}
 
-export default Home
+      {/* RIGHT SIDEBAR */}
+      <div className="hidden lg:block w-[350px]">
+        <RightSidebar />
+      </div>
+
+    </div>
+  );
+};
+
+export default Home;

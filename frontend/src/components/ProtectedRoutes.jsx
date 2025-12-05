@@ -1,33 +1,18 @@
-import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import api from "../lib/api";
-import { setAuthUser, clearAuthUser } from "../redux/authSlice";
+import React from "react";
+import { useSelector } from "react-redux";
+import { Navigate, useLocation } from "react-router-dom";
 
 const ProtectedRoutes = ({ children }) => {
   const { user } = useSelector(state => state.auth);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const location = useLocation();
 
-  useEffect(() => {
+  const publicRoutes = ["/login", "/signup"];
 
-    const validateSession = async () => {
-      try {
-        const res = await api.get("/api/v1/user/profile-check");
-        dispatch(setAuthUser(res.data.user));
-      } catch {
-        dispatch(clearAuthUser());
-        navigate("/login", { replace: true });
-      }
-    };
+  if (user && publicRoutes.includes(location.pathname)) {
+    return <Navigate to="/" replace />;
+  }
 
-    if (!user) validateSession();
-
-  }, [dispatch, navigate, user]);
-
-  if (!user) return null;
-
-  return <>{children}</>;
+  return user ? children : <Navigate to="/login" replace />;
 };
 
 export default ProtectedRoutes;

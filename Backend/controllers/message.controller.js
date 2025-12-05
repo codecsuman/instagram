@@ -1,27 +1,31 @@
-// Backend/controllers/message.controller.js
+// message.controller.js
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
-import { getReceiverSocketId, getIO } from "../socket/socket.js";
+import { getReceiverSocketIds, io } from "../socket/socket.js";
 
-// ✅ SEND MESSAGE
+/* --------------------------------------------------------
+   SEND MESSAGE (REAL-TIME + DB)
+-------------------------------------------------------- */
 export const sendMessage = async (req, res) => {
   try {
     const senderId = req.id;
     const receiverId = req.params.id;
     const { textMessage } = req.body;
 
-    if (!textMessage || !textMessage.trim()) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Message is empty" });
+    if (!textMessage || textMessage.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Message cannot be empty",
+      });
     }
 
-    // ✅ Find conversation
+    /* -----------------------------------------
+       FIND OR CREATE CONVERSATION
+    -------------------------------------------- */
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });
 
-    // ✅ Create if not exists
     if (!conversation) {
       conversation = await Conversation.create({
         participants: [senderId, receiverId],
@@ -29,37 +33,63 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    // ✅ Create message
-    const newMessage = await Message.create({
+    /* -----------------------------------------
+       CREATE MESSAGE
+    -------------------------------------------- */
+    let newMessage = await Message.create({
       senderId,
       receiverId,
       message: textMessage,
     });
 
+    // populate sender info for frontend UI
+    newMessage = await newMessage.populate(
+      "senderId",
+      "username profilePicture"
+    );
+
+    /* -----------------------------------------
+       SAVE MESSAGE IN CONVERSATION
+    -------------------------------------------- */
     conversation.messages.push(newMessage._id);
     await conversation.save();
 
-    // ✅ SEND REALTIME MESSAGE
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    const io = getIO();
+    /* -----------------------------------------
+       SOCKET.IO EMIT (REAL-TIME)
+    -------------------------------------------- */
 
-    if (receiverSocketId && io) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
+    // 🔥 Send to receiver (all devices)
+    const receiverSockets = getReceiverSocketIds(receiverId);
+    receiverSockets.forEach((sockId) => {
+      io.to(sockId).emit("newMessage", newMessage);
+    });
 
+    // 🔥 Also update sender screen instantly
+    const senderSockets = getReceiverSocketIds(senderId);
+    senderSockets.forEach((sockId) => {
+      io.to(sockId).emit("newMessage", newMessage);
+    });
+
+    /* -----------------------------------------
+       RESPONSE
+    -------------------------------------------- */
     return res.status(201).json({
       success: true,
       newMessage,
     });
   } catch (error) {
-    console.error("❌ Send message error:", error.message);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error" });
+    console.log("SEND MESSAGE ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send message",
+      error: error.message,
+    });
   }
 };
 
-// ✅ GET ALL MESSAGES
+/* --------------------------------------------------------
+   GET ALL MESSAGES BETWEEN TWO USERS
+-------------------------------------------------------- */
 export const getMessage = async (req, res) => {
   try {
     const senderId = req.id;
@@ -67,22 +97,22 @@ export const getMessage = async (req, res) => {
 
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
-    }).populate("messages");
-
-    if (!conversation) {
-      return res
-        .status(200)
-        .json({ success: true, messages: [] });
-    }
+    }).populate({
+      path: "messages",
+      options: { sort: { createdAt: 1 } }, // oldest → newest
+      populate: { path: "senderId", select: "username profilePicture" },
+    });
 
     return res.status(200).json({
       success: true,
-      messages: conversation.messages,
+      messages: conversation ? conversation.messages : [],
     });
   } catch (error) {
-    console.error("❌ Fetch messages error:", error.message);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error" });
+    console.log("GET MESSAGE ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch messages",
+      error: error.message,
+    });
   }
 };

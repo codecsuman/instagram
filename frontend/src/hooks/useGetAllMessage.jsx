@@ -1,45 +1,53 @@
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { setMessages } from "../redux/chatSlice";
-import { clearAuthUser } from "../redux/authSlice";
-import api from "../lib/api";
+// src/hooks/useGetAllMessage.js
 
-const useGetAllMessage = (userId) => {
+import { setMessages, setLoading, setError } from "@/redux/chatSlice";
+import api from "@/lib/api";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+const useGetAllMessage = () => {
   const dispatch = useDispatch();
+  const { selectedChatUser } = useSelector((state) => state.chat);
 
   useEffect(() => {
-    if (!userId) return;
+    // No user selected → clear chat
+    if (!selectedChatUser?._id) {
+      dispatch(setMessages([]));
+      return;
+    }
 
-    const controller = new AbortController();
+    let isCancelled = false; // avoids updating state after unmount
+    const userId = selectedChatUser._id;
 
-    const fetchMessages = async () => {
+    const fetchAllMessage = async () => {
       try {
-        const res = await api.get(`/api/v1/message/all/${userId}`, {
-          signal: controller.signal,
-        });
+        dispatch(setLoading(true));
 
-        if (res?.data?.success) {
-          dispatch(setMessages(res.data.messages || []));
+        const res = await api.get(`/message/all/${userId}`);
+
+        if (!isCancelled) {
+          if (res.data.success) {
+            dispatch(setMessages(res.data.messages));
+          }
         }
       } catch (error) {
-
-        // ✅ Ignore cancel
-        if (error.name === "CanceledError") return;
-
-        // ✅ Logout on auth failure
-        if (error.response?.status === 401) {
-          dispatch(clearAuthUser());
-          return;
+        if (!isCancelled) {
+          dispatch(setError(error?.response?.data?.message || "Failed to fetch messages"));
         }
-
-        console.error("❌ Message fetch error:", error?.response?.data || error.message);
+      } finally {
+        if (!isCancelled) {
+          dispatch(setLoading(false));
+        }
       }
     };
 
-    fetchMessages();
+    fetchAllMessage();
 
-    return () => controller.abort();
-  }, [userId, dispatch]);
+    // Cleanup for fast user switching
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedChatUser, dispatch]);
 };
 
 export default useGetAllMessage;

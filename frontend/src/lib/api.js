@@ -1,44 +1,41 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true // ✅ Important for cookies on Render
+  baseURL: `${API_URL}/api/v1`,
+  withCredentials: true,
+  timeout: 10000,
 });
 
-/* ====================== REQUEST INTERCEPTOR ====================== */
+// Add token automatically
 api.interceptors.request.use((config) => {
+  const persisted = localStorage.getItem("persist:root");
 
-  // ✅ Inject Bearer token fallback
-  const token = localStorage.getItem("token");
+  if (persisted) {
+    const parsed = JSON.parse(persisted);
+    const auth = parsed.auth ? JSON.parse(parsed.auth) : null;
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  // ✅ Let browser handle FormData boundaries properly
-  if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
+    if (auth?.token) {
+      config.headers.Authorization = `Bearer ${auth.token}`;
+    }
   }
 
   return config;
+});
 
-}, (error) => Promise.reject(error));
-
-
-/* ====================== RESPONSE INTERCEPTOR ====================== */
+// Auto redirect on 401
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (res) => res,
+  (err) => {
+    if (err?.response?.status === 401) {
+      // clear redux persist properly
+      localStorage.removeItem("persist:root");
+      localStorage.removeItem("token");
 
-    if (error.code === "ERR_CANCELED") return Promise.reject(error);
-
-    console.error("❌ API ERROR:", {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.response?.data?.message || error.message
-    });
-
-    return Promise.reject(error);
+      window.location.href = "/login";
+    }
+    return Promise.reject(err);
   }
 );
 

@@ -8,36 +8,43 @@ import {
   logout,
   register,
 } from "../controllers/user.controller.js";
+
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 import upload from "../middlewares/multer.js";
-import { User } from "../models/user.model.js";
 
 const router = express.Router();
 
-/* ================== SESSION CHECK ================== */
-router.get("/profile-check", isAuthenticated, async (req, res) => {
-  const user = await User.findById(req.id).select("-password");
-  res.json({ success: true, user });
-});
+/* -----------------------------------
+   AUTH ROUTES
+------------------------------------ */
+router.post("/register", register);   // matches frontend: api.post("/user/register")
+router.post("/login", login);         // matches frontend: api.post("/user/login")
+router.post("/logout", logout);       // matches frontend: api.post("/user/logout")
 
-/* ================== AUTH ================== */
-router.post("/register", register);
-router.post("/login", login);
-router.get("/logout", isAuthenticated, logout);
-
-/* ================== DATA ================== */
-router.get("/suggested", isAuthenticated, getSuggestedUsers);
+/* -----------------------------------
+   PROFILE ROUTES
+------------------------------------ */
 router.get("/:id/profile", isAuthenticated, getProfile);
+// frontend: api.get(`/user/${id}/profile`)
 
-/* ✅ PROFILE EDIT FIXED */
-router.post(
+router.patch(
   "/profile/edit",
   isAuthenticated,
-  upload.single("profilePhoto"),
+  upload.single("profilePicture"),
   editProfile
 );
+// frontend: api.patch("/user/profile/edit")
 
-/* ✅ FOLLOW */
+/* -----------------------------------
+   SUGGESTED USERS
+------------------------------------ */
+router.get("/suggested", isAuthenticated, getSuggestedUsers);
+// frontend: api.get("/user/suggested")
+
+/* -----------------------------------
+   FOLLOW / UNFOLLOW
+------------------------------------ */
 router.post("/followorunfollow/:id", isAuthenticated, followOrUnfollow);
+// frontend: api.post(`/user/followorunfollow/${id}`)
 
 export default router;

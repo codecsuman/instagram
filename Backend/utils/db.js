@@ -2,17 +2,18 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      dbName: "instagram_clone",
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000
+      // recommended options for stability
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-
+    console.log(`📦 MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error("❌ MongoDB Connection Failed:", error.message);
+    console.error("❌ MongoDB Connection Error:");
+    console.error(error.message);
+
+    // Exit application on DB connection failure
     process.exit(1);
   }
 };

@@ -1,136 +1,120 @@
-import { useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle
-} from './ui/dialog'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Link } from 'react-router-dom'
-import { MoreHorizontal } from 'lucide-react'
-import { Button } from './ui/button'
-import { useDispatch, useSelector } from 'react-redux'
-import Comment from './Comment'
-import api from '@/lib/api'
-import { toast } from 'sonner'
-import { setPosts } from '@/redux/postSlice'
+import React, { useEffect, useRef, useState } from "react";
+import { Dialog, DialogContent } from "./ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Link } from "react-router-dom";
+import { MoreHorizontal } from "lucide-react";
+import { Button } from "./ui/button";
+import { useDispatch, useSelector } from "react-redux";
+import Comment from "./Comment";
+import api from "@/lib/api";
+import { toast } from "sonner";
+import { setSelectedPost, updateSinglePost } from "@/redux/postSlice";
 
 const CommentDialog = ({ open, setOpen }) => {
+  const dispatch = useDispatch();
+  const { selectedPost } = useSelector((state) => state.post);
+  const [text, setText] = useState("");
 
-  const [text, setText] = useState("")
-  const { selectedPost, posts } = useSelector(state => state.post)
-  const [comments, setComments] = useState([])
-  const dispatch = useDispatch()
+  const scrollRef = useRef(null);
 
-  // ✅ Sync comments from Redux
+  // Auto scroll to bottom when comments change
   useEffect(() => {
-    if (!selectedPost?._id) return
-
-    const livePost = posts.find(p => p._id === selectedPost._id)
-    if (livePost?.comments) {
-      setComments(livePost.comments)
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [selectedPost, posts])
+  }, [selectedPost?.comments]);
 
-  const sendComment = async () => {
-    if (!text.trim() || !selectedPost?._id) return
+  if (!selectedPost) return null;
+
+  // ---------------------------------------------------
+  // SEND COMMENT
+  // ---------------------------------------------------
+  const sendMessageHandler = async () => {
+    if (!text.trim()) return;
 
     try {
-      const res = await api.post(`/api/v1/post/${selectedPost._id}/comment`, {
-        text
-      })
+      const res = await api.post(`/post/${selectedPost._id}/comment`, { text });
 
-      if (res.data?.success) {
+      if (res.data.success) {
+        const newComment = res.data.comment;
 
-        const newComments = [...comments, res.data.comment]
-        setComments(newComments)
+        const updatedPost = {
+          ...selectedPost,
+          comments: [...selectedPost.comments, newComment],
+        };
 
-        const updatedPosts = posts.map(p =>
-          p._id === selectedPost._id
-            ? { ...p, comments: newComments }
-            : p
-        )
+        // Update selected post (modal)
+        dispatch(setSelectedPost(updatedPost));
 
-        dispatch(setPosts(updatedPosts))
-        toast.success(res.data.message || "Comment added")
-        setText("")
+        // Update post in feed (postSlice)
+        dispatch(updateSinglePost(updatedPost));
+
+        toast.success("Comment added!");
+        setText("");
       }
-
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Comment failed")
+      console.log(error);
+      toast.error("Something went wrong");
     }
-  }
-
-  if (!selectedPost) return null
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        aria-describedby="comment-dialog-desc"
-        className="max-w-5xl p-0 flex flex-col"
-      >
-
-        {/* ✅ REQUIRED FOR ACCESSIBILITY */}
-        <DialogTitle className="sr-only">Post Comments</DialogTitle>
-        <span id="comment-dialog-desc" className="sr-only">
-          This dialog shows post comments and allows you to add new ones.
-        </span>
+      <DialogContent className="max-w-5xl p-0 flex flex-col">
 
         <div className="flex flex-1">
 
-          {/* IMAGE */}
+          {/* LEFT IMAGE */}
           <div className="w-1/2 bg-black">
             <img
               src={selectedPost.image}
-              alt="post"
-              className="w-full h-full object-cover rounded-l-lg"
+              alt="post_img"
+              className="w-full h-full object-contain rounded-l-lg bg-black"
+              onError={(e) => (e.target.src = "/fallback.jpg")}
             />
           </div>
 
-          {/* RIGHT SIDE */}
-          <div className="w-1/2 flex flex-col justify-between">
+          {/* RIGHT CONTENT */}
+          <div className="w-1/2 flex flex-col">
 
             {/* HEADER */}
-            <div className="flex items-center justify-between p-4">
-
-              <div className="flex gap-3 items-center">
-                <Link to={`/profile/${selectedPost.author._id}`}>
-                  <Avatar>
-                    <AvatarImage src={selectedPost.author.profilePicture} />
-                    <AvatarFallback>
-                      {selectedPost.author.username[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={selectedPost.author?.profilePicture} />
+                  <AvatarFallback>
+                    {selectedPost.author?.username?.charAt(0)?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
 
                 <Link
-                  to={`/profile/${selectedPost.author._id}`}
+                  to={`/profile/${selectedPost.author?._id}`}
                   className="font-semibold text-xs"
                 >
-                  {selectedPost.author.username}
+                  {selectedPost.author?.username}
                 </Link>
               </div>
 
-              {/* ✅ FIXED: REMOVE NESTED DIALOG */}
               <MoreHorizontal className="cursor-pointer" />
-
             </div>
 
-            <hr />
-
-            {/* COMMENTS */}
-            <div className="flex-1 overflow-y-auto max-h-96 p-4">
-              {comments.length > 0 ? (
-                comments.map(c => <Comment key={c._id} comment={c} />)
+            {/* COMMENT LIST */}
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto max-h-96 p-4"
+            >
+              {selectedPost.comments?.length > 0 ? (
+                selectedPost.comments.map((c) => (
+                  <Comment key={c._id} comment={c} />
+                ))
               ) : (
-                <p className="text-gray-400 text-sm text-center">No comments yet</p>
+                <p className="text-sm text-gray-500">No comments yet.</p>
               )}
             </div>
 
             {/* INPUT */}
-            <div className="p-4">
+            <div className="p-4 border-t">
               <div className="flex items-center gap-2">
-
                 <input
                   type="text"
                   value={text}
@@ -138,25 +122,18 @@ const CommentDialog = ({ open, setOpen }) => {
                   placeholder="Add a comment..."
                   className="w-full outline-none border text-sm border-gray-300 p-2 rounded"
                 />
-
-                <Button
-                  onClick={sendComment}
-                  disabled={!text.trim()}
-                  variant="outline"
-                >
+                <Button disabled={!text.trim()} onClick={sendMessageHandler}>
                   Send
                 </Button>
-
               </div>
             </div>
 
           </div>
 
         </div>
-
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default CommentDialog
+export default CommentDialog;

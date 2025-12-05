@@ -1,12 +1,14 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import authSlice from "./authSlice.js";
-import postSlice from "./postSlice.js";
-import socketSlice from "./socketSlice.js";
-import chatSlice from "./chatSlice.js";
-import rtnSlice from "./rtnSlice.js";
+
+import authReducer from "./authSlice.js";
+import postReducer from "./postSlice.js";
+import socketReducer from "./socketSlice.js";
+import chatReducer from "./chatSlice.js";
+import rtnReducer from "./rtnSlice.js";
 
 import {
   persistReducer,
+  persistStore,
   FLUSH,
   REHYDRATE,
   PAUSE,
@@ -17,30 +19,35 @@ import {
 
 import storage from "redux-persist/lib/storage";
 
-// ✅ STORE ONLY AUTH
+// --------------------------------------------------
+// PERSIST ONLY AUTH (BEST PRACTICE)
+// --------------------------------------------------
 const persistConfig = {
-  key: "root",
-  version: 1,
+  key: "auth",
   storage,
-  whitelist: ["auth"],
+  whitelist: ["user"], // only user is stored
 };
 
+// --------------------------------------------------
+// ROOT REDUCER
+// --------------------------------------------------
 const rootReducer = combineReducers({
-  auth: authSlice,
-  post: postSlice,
-  chat: chatSlice,
-  realTimeNotification: rtnSlice,
-  socketio: socketSlice,
+  auth: persistReducer(persistConfig, authReducer), // persisted
+  post: postReducer, // not persisted
+  socket: socketReducer, // not persisted
+  chat: chatReducer, // not persisted
+  realTimeNotification: rtnReducer, // not persisted
 });
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
-export const store = configureStore({
-  reducer: persistedReducer,
+// --------------------------------------------------
+// STORE
+// --------------------------------------------------
+const store = configureStore({
+  reducer: rootReducer,
+  devTools: true,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // ✅ Fix Redux-Persist warnings
         ignoredActions: [
           FLUSH,
           REHYDRATE,
@@ -49,9 +56,13 @@ export const store = configureStore({
           PURGE,
           REGISTER,
         ],
+        ignoredPaths: ["socket.socket"], // ignore non-serializable socket
       },
-      immutableCheck: false   // ✅ prevent console noise
     }),
 });
 
+// --------------------------------------------------
+// EXPORT
+// --------------------------------------------------
+export const persistor = persistStore(store);
 export default store;

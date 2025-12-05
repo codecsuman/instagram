@@ -1,101 +1,149 @@
-import { useEffect, useState } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Dialog, DialogContent, DialogTrigger } from './ui/dialog'
-import { Bookmark, MessageCircle, MoreHorizontal, Send } from 'lucide-react'
-import { Button } from './ui/button'
-import { FaHeart, FaRegHeart } from "react-icons/fa"
-import CommentDialog from './CommentDialog'
-import { useDispatch, useSelector } from 'react-redux'
-import api from '@/lib/api'
-import { toast } from 'sonner'
-import { setPosts, setSelectedPost } from '@/redux/postSlice'
-import { Badge } from './ui/badge'
+import React, { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import { Bookmark, MessageCircle, MoreHorizontal, Send } from "lucide-react";
+import { Button } from "./ui/button";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import CommentDialog from "./CommentDialog";
+import { useDispatch, useSelector } from "react-redux";
+import api from "@/lib/api";
+import { toast } from "sonner";
+import { setPosts, setSelectedPost } from "@/redux/postSlice";
+import { Badge } from "./ui/badge";
 
 const Post = ({ post }) => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((store) => store.auth);
+  const { posts } = useSelector((store) => store.post);
 
-  const dispatch = useDispatch()
-  const { user } = useSelector(state => state.auth)
-  const { posts } = useSelector(state => state.post)
+  const [open, setOpen] = useState(false);
+  const [commentText, setCommentText] = useState("");
 
-  const [text, setText] = useState("")
-  const [open, setOpen] = useState(false)
-  const [liked, setLiked] = useState(false)
-  const [postLike, setPostLike] = useState(0)
+  // normalize id
+  const userId = user?._id?.toString();
+  const isLiked = post.likes?.map(String).includes(userId);
+  const likeCount = post.likes?.length || 0;
 
-  useEffect(() => {
-    setLiked(post.likes?.includes(user?._id))
-    setPostLike(post.likes?.length || 0)
-  }, [post, user])
-
-  const likeOrDislikeHandler = async () => {
+  // ------------------------------
+  // LIKE / DISLIKE
+  // ------------------------------
+  const likeHandler = async () => {
     try {
-      const action = liked ? "dislike" : "like"
-      const res = await api.get(`/api/v1/post/${post._id}/${action}`)
+      const action = isLiked ? "dislike" : "like";
+      const res = await api.get(`/post/${post._id}/${action}`);
 
-      if (res?.data?.success) {
-        const updated = posts.map(p =>
-          p._id === post._id
-            ? { ...p, likes: res.data.likes }
-            : p
-        )
-        dispatch(setPosts(updated))
-      }
+      if (!res.data.success) return;
+
+      const updatedLikes = isLiked
+        ? post.likes.filter((id) => id.toString() !== userId)
+        : [...post.likes, userId];
+
+      // update posts list
+      const updated = posts.map((p) =>
+        p._id === post._id ? { ...p, likes: updatedLikes } : p
+      );
+
+      dispatch(setPosts(updated));
+
+      // also update selectedPost (for CommentDialog)
+      dispatch(setSelectedPost({ ...post, likes: updatedLikes }));
     } catch {
-      toast.error("Like failed")
+      toast.error("Error updating like");
     }
-  }
+  };
 
-  const commentHandler = async () => {
-    if (!text.trim()) return
+  // ------------------------------
+  // ADD COMMENT
+  // ------------------------------
+  const addComment = async () => {
+    if (!commentText.trim()) return;
 
     try {
-      const res = await api.post(`/api/v1/post/${post._id}/comment`, { text })
-      if (res?.data?.success) {
-        const updated = posts.map(p =>
-          p._id === post._id
-            ? { ...p, comments: res.data.comments }
-            : p
-        )
-        dispatch(setPosts(updated))
-        setText("")
-      }
-    } catch {
-      toast.error("Comment failed")
-    }
-  }
+      const res = await api.post(`/post/${post._id}/comment`, {
+        text: commentText,
+      });
 
+      if (!res.data.success) return;
+
+      const newComment = res.data.comment;
+
+      const updatedPosts = posts.map((p) =>
+        p._id === post._id
+          ? { ...p, comments: [...p.comments, newComment] }
+          : p
+      );
+
+      dispatch(setPosts(updatedPosts));
+      dispatch(
+        setSelectedPost({
+          ...post,
+          comments: [...post.comments, newComment],
+        })
+      );
+
+      setCommentText("");
+    } catch {
+      toast.error("Failed to add comment");
+    }
+  };
+
+  // ------------------------------
+  // DELETE POST
+  // ------------------------------
   const deletePostHandler = async () => {
     try {
-      const res = await api.delete(`/api/v1/post/delete/${post._id}`)
-      if (res?.data?.success) {
-        dispatch(setPosts(posts.filter(p => p._id !== post._id)))
-        setOpen(false)
+      const res = await api.delete(`/post/delete/${post._id}`);
+
+      if (res.data.success) {
+        const updated = posts.filter((p) => p._id !== post._id);
+        dispatch(setPosts(updated));
+        toast.success("Post deleted");
       }
     } catch {
-      toast.error("Delete failed")
+      toast.error("Failed to delete post");
     }
-  }
+  };
+
+  // ------------------------------
+  // BOOKMARK
+  // ------------------------------
+  const bookmarkHandler = async () => {
+    try {
+      const res = await api.get(`/post/${post._id}/bookmark`);
+      toast.success(res.data.message || "Saved");
+    } catch {
+      toast.error("Bookmark failed");
+    }
+  };
 
   return (
-    <div className="max-w-sm mx-auto my-6">
+    <div className="my-8 w-full max-w-sm mx-auto">
 
-      <div className="flex justify-between items-center">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={post.author?.profilePicture} />
-            <AvatarFallback>{post.author?.username?.[0]}</AvatarFallback>
+            <AvatarFallback>U</AvatarFallback>
           </Avatar>
-          <h1 className="font-medium">{post.author?.username}</h1>
-          {user?._id === post.author?._id && <Badge>Author</Badge>}
+
+          <div className="flex items-center gap-3">
+            <h1 className="font-medium">{post.author?.username}</h1>
+            {userId === post.author?._id?.toString() && (
+              <Badge variant="secondary">Author</Badge>
+            )}
+          </div>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger>
-            <MoreHorizontal />
+        {/* OPTIONS */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <MoreHorizontal className="cursor-pointer" />
           </DialogTrigger>
-          <DialogContent>
-            {user?._id === post.author?._id && (
-              <Button onClick={deletePostHandler} className="text-red-500">
+
+          <DialogContent className="flex flex-col text-center items-center">
+            {userId === post.author?._id?.toString() && (
+              <Button variant="ghost" onClick={deletePostHandler}>
                 Delete
               </Button>
             )}
@@ -103,37 +151,91 @@ const Post = ({ post }) => {
         </Dialog>
       </div>
 
-      <img className="w-full aspect-square object-cover mt-2" src={post.image} />
-
-      <div className="flex gap-3 mt-2">
-        {liked
-          ? <FaHeart onClick={likeOrDislikeHandler} className="text-red-500 cursor-pointer" />
-          : <FaRegHeart onClick={likeOrDislikeHandler} className="cursor-pointer" />
-        }
-        <MessageCircle onClick={() => setOpen(true)} />
-        <Send />
-        <Bookmark />
-      </div>
-
-      <p className="mt-1"><b>{postLike}</b> likes</p>
-      <p><b>{post.author?.username}</b> {post.caption}</p>
-
-      <input
-        className="mt-2 w-full outline-none"
-        placeholder="Add comment..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
+      {/* IMAGE */}
+      <img
+        className="rounded-sm my-2 w-full aspect-square object-cover"
+        src={post.image}
+        alt="post"
+        onError={(e) => (e.target.src = "/fallback.png")}
       />
 
-      {text && (
-        <span onClick={commentHandler} className="text-blue-500 cursor-pointer">
-          Post
+      {/* ACTIONS */}
+      <div className="flex items-center justify-between my-2">
+        <div className="flex items-center gap-3">
+          {isLiked ? (
+            <FaHeart
+              size={24}
+              className="cursor-pointer text-red-600"
+              onClick={likeHandler}
+            />
+          ) : (
+            <FaRegHeart
+              size={22}
+              className="cursor-pointer"
+              onClick={likeHandler}
+            />
+          )}
+
+          <MessageCircle
+            className="cursor-pointer"
+            onClick={() => {
+              dispatch(setSelectedPost(post));
+              setOpen(true);
+            }}
+          />
+
+          <Send className="cursor-pointer" />
+        </div>
+
+        <Bookmark className="cursor-pointer" onClick={bookmarkHandler} />
+      </div>
+
+      {/* LIKE COUNT */}
+      <span className="font-medium block mb-2">{likeCount} likes</span>
+
+      {/* CAPTION */}
+      <p>
+        <span className="font-medium mr-2">{post.author?.username}</span>
+        {post.caption}
+      </p>
+
+      {/* VIEW COMMENTS */}
+      {post.comments.length > 0 && (
+        <span
+          className="cursor-pointer text-sm text-gray-400"
+          onClick={() => {
+            dispatch(setSelectedPost(post));
+            setOpen(true);
+          }}
+        >
+          View all {post.comments.length} comments
         </span>
       )}
 
+      {/* COMMENT DIALOG */}
       <CommentDialog open={open} setOpen={setOpen} />
-    </div>
-  )
-}
 
-export default Post
+      {/* COMMENT INPUT */}
+      <div className="flex items-center justify-between mt-1">
+        <input
+          type="text"
+          placeholder="Add a comment..."
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          className="outline-none text-sm w-full"
+        />
+
+        {commentText.trim() && (
+          <span
+            className="text-[#3BADF8] cursor-pointer"
+            onClick={addComment}
+          >
+            Post
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Post;

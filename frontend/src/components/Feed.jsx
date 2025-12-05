@@ -1,11 +1,18 @@
-import Posts from './Posts'
+import React from "react";
+import Posts from "./Posts";
+import useGetAllPost from "@/hooks/useGetAllPost";
 
 const Feed = () => {
-  return (
-    <div className="flex-1 my-8 flex flex-col items-center pl-[20%]">
-      <Posts />
-    </div>
-  )
-}
+  // 🔥 Always load posts on feed mount
+  useGetAllPost();
 
-export default Feed
+  return (
+    <div className="flex flex-1 justify-center my-8">
+      <div className="max-w-xl w-full">
+        <Posts />
+      </div>
+    </div>
+  );
+};
+
+export default Feed;

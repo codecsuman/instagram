@@ -1,20 +1,28 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { io } from "socket.io-client";
-import { useDispatch, useSelector } from "react-redux";
-import { setOnlineUsers } from "./redux/chatSlice";
-import { setLikeNotification } from "./redux/rtnSlice";
-import { setSocket } from "./redux/socketSlice";
 
-import MainLayout from "./components/MainLayout";
-import Home from "./components/Home";
-import Profile from "./components/Profile";
-import EditProfile from "./components/EditProfile";
+// Pages
 import ChatPage from "./components/ChatPage";
+import EditProfile from "./components/EditProfile";
+import Home from "./components/Home";
 import Login from "./components/Login";
+import MainLayout from "./components/MainLayout";
+import Profile from "./components/Profile";
 import Signup from "./components/Signup";
 import ProtectedRoutes from "./components/ProtectedRoutes";
 
+// Redux
+import { useDispatch, useSelector } from "react-redux";
+import { setOnlineUsers } from "./redux/socketSlice";
+import { setLikeNotification } from "./redux/rtnSlice";
+
+// Socket.io
+import { io } from "socket.io-client";
+
+
+// --------------------------------------------
+// ROUTES
+// --------------------------------------------
 const router = createBrowserRouter([
   {
     path: "/",
@@ -24,57 +32,52 @@ const router = createBrowserRouter([
       </ProtectedRoutes>
     ),
     children: [
-      { index: true, element: <Home /> },
-      { path: "profile/:id", element: <Profile /> },
-      { path: "account/edit", element: <EditProfile /> },
-      { path: "chat", element: <ChatPage /> },
-    ]
+      { path: "/", element: <Home /> },
+      { path: "/profile/:id", element: <Profile /> },
+      { path: "/account/edit", element: <EditProfile /> },
+      { path: "/chat", element: <ChatPage /> },
+    ],
   },
+
+  // Public routes
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
 ]);
 
+
+// --------------------------------------------
+// MAIN APP
+// --------------------------------------------
 function App() {
-  const { user } = useSelector(state => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const socketRef = useRef(null);
 
   useEffect(() => {
-
     if (!user) return;
-    if (socketRef.current) return;
 
-    const token = document.cookie
-      .split("; ")
-      .find(row => row.startsWith("token="))
-      ?.split("=")[1];
-
-    if (!token) return;
-
-    socketRef.current = io(import.meta.env.VITE_SOCKET_URL, {
-      auth: { token },
+    // Create socket only when user is logged in
+    const socket = io(import.meta.env.VITE_API_URL, {
+      query: { userId: user._id },
+      transports: ["websocket", "polling"],
       withCredentials: true,
-      transports: ["websocket"]
+      reconnection: true,
+      reconnectionAttempts: 10,
     });
 
-    socketRef.current.on("connect", () => {
-      dispatch(setSocket(socketRef.current));
-    });
-
-    socketRef.current.on("getOnlineUsers", users => {
+    // Online users
+    socket.on("getOnlineUsers", (users) => {
       dispatch(setOnlineUsers(users));
     });
 
-    socketRef.current.on("notification", data => {
-      dispatch(setLikeNotification(data));
+    // Real-time notifications
+    socket.on("notification", (noti) => {
+      dispatch(setLikeNotification(noti));
     });
 
+    // cleanup when component unmounts OR user logs out
     return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-      dispatch(setSocket(null));
+      socket.disconnect();
     };
-
   }, [user]);
 
   return <RouterProvider router={router} />;

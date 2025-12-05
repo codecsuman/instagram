@@ -1,41 +1,50 @@
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { setSuggestedUsers, clearAuthUser } from "../redux/authSlice";
-import api from "../lib/api";
+// src/hooks/useGetSuggestedUsers.js
+
+import { setSuggestedUsers } from "@/redux/authSlice";
+import api from "@/lib/api";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 const useGetSuggestedUsers = () => {
   const dispatch = useDispatch();
+  const { user, suggestedUsers } = useSelector((state) => state.auth);
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const controller = new AbortController();
+    // No user logged in → no suggested users
+    if (!user?._id) {
+      dispatch(setSuggestedUsers([]));
+      return;
+    }
+
+    let isMounted = true;
 
     const fetchSuggestedUsers = async () => {
       try {
-        const res = await api.get("/api/v1/user/suggested", {
-          signal: controller.signal,
-        });
+        setLoading(true);
 
-        if (res?.data?.success) {
-          dispatch(setSuggestedUsers(res.data.users || []));
+        const res = await api.get("/user/suggested");
+
+        if (isMounted && res.data.success) {
+          dispatch(setSuggestedUsers(res.data.users));
         }
       } catch (error) {
-
-        // ✅ ignore canceled requests
-        if (error.name === "CanceledError") return;
-
-        // ✅ logout user if auth fails
-        if (error.response?.status === 401) {
-          dispatch(clearAuthUser());
-          return;
-        }
-
-        console.error("❌ Suggested users error:", error?.response?.data || error.message);
+        console.log("❌ Error loading suggested users:", error);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
+    // Always refresh on login OR account change
     fetchSuggestedUsers();
-    return () => controller.abort();
-  }, [dispatch]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, user?._id]);
+
+  return { loading, suggestedUsers };
 };
 
 export default useGetSuggestedUsers;

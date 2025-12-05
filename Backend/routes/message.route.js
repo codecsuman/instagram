@@ -4,10 +4,10 @@ import { getMessage, sendMessage } from "../controllers/message.controller.js";
 
 const router = express.Router();
 
-// ✅ Send message
-router.post("/:id", isAuthenticated, sendMessage);
+/* ------------------ SEND MESSAGE ------------------ */
+router.post("/send/:id", isAuthenticated, sendMessage);
 
-// ✅ Get all messages with a user
-router.get("/:id", isAuthenticated, getMessage);
+/* ------------------ GET ALL MESSAGES ------------------ */
+router.get("/all/:id", isAuthenticated, getMessage);
 
 export default router;

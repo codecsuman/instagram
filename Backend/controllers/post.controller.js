@@ -1,228 +1,374 @@
-
+// controllers/post.controller.js
+import sharp from "sharp";
 import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
-import { getReceiverSocketId, getIO } from "../socket/socket.js";
+import { getReceiverSocketIds, io } from "../socket/socket.js";
 
-/* ===================== ADD POST ===================== */
+/* -------------------------------------------
+   ADD NEW POST
+-------------------------------------------- */
 export const addNewPost = async (req, res) => {
   try {
-    const { caption = "" } = req.body;
-    const file = req.file;
+    const { caption } = req.body;
+    const image = req.file;
     const authorId = req.id;
 
-    if (!file) {
+    if (!image) {
       return res.status(400).json({
         success: false,
-        message: "Image is required"
+        message: "Image required",
       });
     }
 
-    // ✅ Resize + compress
-    const optimized = await sharp(file.buffer)
-      .resize({ width: 800 })
-      .jpeg({ quality: 70 })
+    // ✔ Optimize image
+    const optimizedImageBuffer = await sharp(image.buffer)
+      .resize({ width: 800, height: 800, fit: "inside" })
+      .jpeg({ quality: 80 })
       .toBuffer();
 
-    const base64Image = `data:image/jpeg;base64,${optimized.toString("base64")}`;
+    const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString(
+      "base64"
+    )}`;
 
-    // ✅ Upload to cloudinary
-    const uploadResult = await cloudinary.uploader.upload(base64Image, {
-      folder: "posts",
-      resource_type: "image"
-    });
+    // ✔ Upload to Cloudinary
+    const uploaded = await cloudinary.uploader.upload(fileUri);
 
-    if (!uploadResult?.secure_url) {
-      return res.status(500).json({
-        success: false,
-        message: "Cloudinary upload failed"
-      });
-    }
-
-    // ✅ Create post
+    // ✔ Create post
     const post = await Post.create({
-      caption,
-      image: uploadResult.secure_url,
-      author: authorId
+      caption: caption || "",
+      image: uploaded.secure_url,
+      author: authorId,
+      comments: [],
+      likes: [],
     });
 
-    // ✅ Update user posts
-    const user = await User.findById(authorId);
-    if (user) {
-      user.posts.push(post._id);
-      await user.save();
-    }
+    await User.findByIdAndUpdate(authorId, {
+      $push: { posts: post._id },
+    });
 
     await post.populate("author", "username profilePicture");
 
     return res.status(201).json({
       success: true,
-      message: "Post created successfully",
-      post
+      message: "New post added",
+      post,
     });
-
   } catch (error) {
-    console.error("🔥 ADD POST ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Failed to add post",
+      error: error.message,
     });
   }
 };
 
-
-/* ===================== GET ALL POSTS ===================== */
+/* -------------------------------------------
+   GET ALL POSTS (FEED)
+-------------------------------------------- */
 export const getAllPost = async (req, res) => {
-  const posts = await Post.find()
-    .sort({ createdAt: -1 })
-    .populate("author", "username profilePicture")
-    .populate({
-      path: "comments",
-      options: { sort: { createdAt: -1 } },
-      populate: { path: "author", select: "username profilePicture" }
-    });
+  try {
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate("author", "username profilePicture")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 } },
+        populate: {
+          path: "author",
+          select: "username profilePicture",
+        },
+      });
 
-  res.status(200).json({ success: true, posts });
+    return res.status(200).json({
+      success: true,
+      posts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch posts",
+      error: error.message,
+    });
+  }
 };
 
-
-/* ===================== GET USER POSTS ===================== */
+/* -------------------------------------------
+   GET LOGGED-IN USER POSTS
+-------------------------------------------- */
 export const getUserPost = async (req, res) => {
-  const posts = await Post.find({ author: req.id })
-    .sort({ createdAt: -1 })
-    .populate("author", "username profilePicture")
-    .populate({
-      path: "comments",
-      populate: { path: "author", select: "username profilePicture" }
-    });
+  try {
+    const authorId = req.id;
 
-  res.status(200).json({ success: true, posts });
+    const posts = await Post.find({ author: authorId })
+      .sort({ createdAt: -1 })
+      .populate("author", "username profilePicture")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 } },
+        populate: { path: "author", select: "username profilePicture" },
+      });
+
+    return res.status(200).json({
+      success: true,
+      posts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch user posts",
+      error: error.message,
+    });
+  }
 };
 
-
-/* ===================== LIKE POST ===================== */
+/* -------------------------------------------
+   LIKE POST
+-------------------------------------------- */
 export const likePost = async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ success: false });
+  try {
+    const likerId = req.id;
+    const postId = req.params.id;
 
-  if (post.likes.includes(req.id)) {
-    return res.status(400).json({
+    const post = await Post.findById(postId);
+    if (!post)
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+
+    // Prevent duplicate likes
+    if (!post.likes.includes(likerId)) {
+      post.likes.push(likerId);
+      await post.save();
+    }
+
+    const user = await User.findById(likerId).select(
+      "username profilePicture"
+    );
+
+    const postOwnerId = post.author.toString();
+
+    // Don’t notify yourself
+    if (postOwnerId !== likerId.toString()) {
+      const notification = {
+        type: "like",
+        userId: likerId,
+        userDetails: user,
+        postId,
+        message: "liked your post",
+      };
+
+      const receivers = getReceiverSocketIds(postOwnerId);
+      receivers.forEach((sockId) =>
+        io.to(sockId).emit("notification", notification)
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Post liked",
+    });
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Already liked"
+      message: "Failed to like post",
+      error: error.message,
     });
   }
-
-  post.likes.push(req.id);
-  await post.save();
-
-  const user = await User.findById(req.id).select("username profilePicture");
-
-  // ✅ Send realtime notification
-  if (post.author.toString() !== req.id) {
-    const socketId = getReceiverSocketId(post.author.toString());
-    const io = getIO();
-    io?.to(socketId)?.emit("notification", {
-      type: "like",
-      userId: req.id,
-      userDetails: user,
-      postId: post._id
-    });
-  }
-
-  return res.json({
-    success: true,
-    likes: post.likes
-  });
 };
 
-
-/* ===================== DISLIKE POST ===================== */
+/* -------------------------------------------
+   DISLIKE POST
+-------------------------------------------- */
 export const dislikePost = async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ success: false });
+  try {
+    const likerId = req.id;
+    const postId = req.params.id;
 
-  post.likes = post.likes.filter(id => id.toString() !== req.id);
-  await post.save();
+    const post = await Post.findById(postId);
+    if (!post)
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
 
-  return res.json({
-    success: true,
-    likes: post.likes
-  });
-};
+    post.likes = post.likes.filter(
+      (id) => id.toString() !== likerId.toString()
+    );
 
+    await post.save();
 
-/* ===================== ADD COMMENT ===================== */
-export const addComment = async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ success: false });
-
-  const comment = await Comment.create({
-    text: req.body.text,
-    author: req.id,
-    post: post._id
-  });
-
-  await comment.populate("author", "username profilePicture");
-
-  post.comments.push(comment._id);
-  await post.save();
-
-  return res.status(201).json({
-    success: true,
-    comment,
-    comments: post.comments
-  });
-};
-
-
-/* ===================== GET COMMENTS ===================== */
-export const getCommentsOfPost = async (req, res) => {
-  const comments = await Comment.find({ post: req.params.id })
-    .populate("author", "username profilePicture");
-
-  res.json({ success: true, comments });
-};
-
-
-/* ===================== DELETE POST ===================== */
-export const deletePost = async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ success: false });
-
-  if (post.author.toString() !== req.id) {
-    return res.status(403).json({
+    return res.status(200).json({
+      success: true,
+      message: "Post disliked",
+    });
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Unauthorized"
+      message: "Failed to dislike post",
+      error: error.message,
     });
   }
-
-  await Post.deleteOne({ _id: post._id });
-  await Comment.deleteMany({ post: post._id });
-
-  const user = await User.findById(req.id);
-  user.posts = user.posts.filter(id => id.toString() !== post._id.toString());
-  await user.save();
-
-  res.json({
-    success: true,
-    message: "Post deleted"
-  });
 };
 
+/* -------------------------------------------
+   ADD COMMENT
+-------------------------------------------- */
+export const addComment = async (req, res) => {
+  try {
+    const commenterId = req.id;
+    const postId = req.params.id;
+    const { text } = req.body;
 
-/* ===================== BOOKMARK ===================== */
-export const bookmarkPost = async (req, res) => {
-  const user = await User.findById(req.id);
+    if (!text || text.trim() === "")
+      return res.status(400).json({
+        success: false,
+        message: "Text is required",
+      });
 
-  if (user.bookmarks.includes(req.params.id)) {
-    user.bookmarks.pull(req.params.id);
-    await user.save();
-    return res.json({ success: true, type: "unsaved" });
+    const post = await Post.findById(postId);
+    if (!post)
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+
+    const comment = await Comment.create({
+      text,
+      author: commenterId,
+      post: postId,
+    });
+
+    await comment.populate("author", "username profilePicture");
+
+    post.comments.push(comment._id);
+    await post.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Comment added",
+      comment,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add comment",
+      error: error.message,
+    });
   }
+};
 
-  user.bookmarks.push(req.params.id);
-  await user.save();
+/* -------------------------------------------
+   GET COMMENTS OF A POST
+-------------------------------------------- */
+export const getCommentsOfPost = async (req, res) => {
+  try {
+    const postId = req.params.id;
 
-  return res.json({ success: true, type: "saved" });
+    const comments = await Comment.find({ post: postId })
+      .sort({ createdAt: -1 })
+      .populate("author", "username profilePicture");
+
+    return res.status(200).json({
+      success: true,
+      comments,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch comments",
+      error: error.message,
+    });
+  }
+};
+
+/* -------------------------------------------
+   DELETE POST
+-------------------------------------------- */
+export const deletePost = async (req, res) => {
+  try {
+    const authorId = req.id;
+    const postId = req.params.id;
+
+    const post = await Post.findById(postId);
+    if (!post)
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+
+    if (post.author.toString() !== authorId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    await Comment.deleteMany({ post: postId });
+    await Post.findByIdAndDelete(postId);
+
+    await User.findByIdAndUpdate(authorId, {
+      $pull: { posts: postId },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Post deleted",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete post",
+      error: error.message,
+    });
+  }
+};
+
+/* -------------------------------------------
+   BOOKMARK POST
+-------------------------------------------- */
+export const bookmarkPost = async (req, res) => {
+  try {
+    const userId = req.id;
+    const postId = req.params.id;
+
+    const user = await User.findById(userId);
+    if (!user)
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+
+    const isBookmarked = user.bookmarks.includes(postId);
+
+    if (isBookmarked) {
+      user.bookmarks = user.bookmarks.filter(
+        (id) => id.toString() !== postId.toString()
+      );
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        type: "unsaved",
+        message: "Post removed from bookmark",
+      });
+    }
+
+    user.bookmarks.push(postId);
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      type: "saved",
+      message: "Post bookmarked",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to bookmark post",
+      error: error.message,
+    });
+  }
 };

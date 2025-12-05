@@ -1,41 +1,34 @@
+import { setPosts } from "@/redux/postSlice";
+import api from "@/lib/api";
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { setPosts } from "../redux/postSlice";
-import { clearAuthUser } from "../redux/authSlice";
-import api from "../lib/api";
+import { useDispatch, useSelector } from "react-redux";
 
 const useGetAllPost = () => {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth); // reload posts if user changes
 
   useEffect(() => {
-    const controller = new AbortController();
+    let isMounted = true;
 
-    const fetchAllPost = async () => {
+    const fetchAllPosts = async () => {
       try {
-        const res = await api.get("/api/v1/post/all", {
-          signal: controller.signal,
-        });
+        const res = await api.get("/post/all");
 
-        if (res?.data?.success) {
-          dispatch(setPosts(res.data.posts || []));
+        if (isMounted && res.data.success) {
+          dispatch(setPosts(res.data.posts));
         }
       } catch (error) {
-        // ✅ ignore canceled requests
-        if (error.name === "CanceledError") return;
-
-        // ✅ logout on 401
-        if (error.response?.status === 401) {
-          dispatch(clearAuthUser());
-          return;
-        }
-
-        console.error("❌ Post fetch error:", error?.response?.data || error.message);
+        console.log("❌ Error loading posts:", error);
       }
     };
 
-    fetchAllPost();
-    return () => controller.abort();
-  }, [dispatch]);
+    fetchAllPosts();
+
+    // Cleanup to avoid state update after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, user]); // 🔥 refetch when user logs in OR logs out
 };
 
 export default useGetAllPost;

@@ -1,72 +1,79 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { setSelectedUser } from "../redux/authSlice";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import { setSelectedChatUser, addMessage } from "@/redux/chatSlice";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { MessageCircleCode } from "lucide-react";
 import Messages from "./Messages";
-import api from "../lib/api";
-
-import { addMessage } from "../redux/chatSlice";
+import api from "@/lib/api";
+import useGetRTM from "@/hooks/useGetRTM";
 
 const ChatPage = () => {
   const [textMessage, setTextMessage] = useState("");
-  const { user, suggestedUsers, selectedUser } = useSelector((state) => state.auth);
-  const { onlineUsers } = useSelector((state) => state.chat);
   const dispatch = useDispatch();
 
-  const sendMessageHandler = async () => {
-    if (!textMessage.trim() || !selectedUser?._id) return;
+  const user = useSelector((state) => state.auth.user);
+  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers);
+  const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
+  const onlineUsers = useSelector((state) => state.socket.onlineUsers);
+
+  // Pass your socket instance (from App.jsx) to hook
+  const socket = window.socketRef?.current;
+  useGetRTM(socket);
+
+  // ------------------------------------------------
+  // SEND MESSAGE (socket + API)
+  // ------------------------------------------------
+  const sendMessageHandler = async (receiverId) => {
+    if (!textMessage.trim()) return;
 
     try {
-      const res = await api.post(`/api/v1/message/send/${selectedUser._id}`, {
+      const res = await api.post(`/message/send/${receiverId}`, {
         textMessage,
       });
 
-      if (res.data?.success) {
+      if (res.data.success) {
+        // 1. Update my own chat instantly
         dispatch(addMessage(res.data.newMessage));
+
+        // 2. Emit message to receiver
+        socket?.emit("sendMessage", {
+          receiverId,
+          message: res.data.newMessage,
+        });
+
         setTextMessage("");
       }
     } catch (error) {
-      console.error("Send message error:", error?.response?.data || error.message);
+      console.log("SEND ERR:", error);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      dispatch(setSelectedUser(null));
-    };
-  }, [dispatch]);
-
   return (
-    <div className="flex ml-[16%] h-screen">
-      {/* USER LIST */}
+    <div className="flex h-screen w-full">
+      {/* LEFT USER LIST */}
       <section className="w-full md:w-1/4 my-8">
         <h1 className="font-bold mb-4 px-3 text-xl">{user?.username}</h1>
         <hr className="mb-4 border-gray-300" />
 
         <div className="overflow-y-auto h-[80vh]">
-          {suggestedUsers?.map((suggestedUser) => {
-            const isOnline = onlineUsers?.includes(suggestedUser?._id);
+          {suggestedUsers.map((u) => {
+            const isOnline = onlineUsers.includes(u._id);
 
             return (
               <div
-                key={suggestedUser._id}
-                onClick={() => dispatch(setSelectedUser(suggestedUser))}
+                key={u._id}
+                onClick={() => dispatch(setSelectedChatUser(u))}
                 className="flex gap-3 items-center p-3 hover:bg-gray-50 cursor-pointer"
               >
                 <Avatar className="w-14 h-14">
-                  <AvatarImage src={suggestedUser?.profilePicture} />
-                  <AvatarFallback>
-                    {suggestedUser?.username?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
+                  <AvatarImage src={u.profilePicture} />
+                  <AvatarFallback>U</AvatarFallback>
                 </Avatar>
 
                 <div className="flex flex-col">
-                  <span className="font-medium">
-                    {suggestedUser?.username}
-                  </span>
+                  <span className="font-medium">{u.username}</span>
                   <span
                     className={`text-xs font-bold ${
                       isOnline ? "text-green-600" : "text-red-600"
@@ -81,36 +88,44 @@ const ChatPage = () => {
         </div>
       </section>
 
-      {/* CHAT SECTION */}
-      {selectedUser ? (
+      {/* RIGHT CHAT WINDOW */}
+      {selectedChatUser ? (
         <section className="flex-1 border-l border-gray-300 flex flex-col h-full">
-          <div className="flex gap-3 items-center px-3 py-2 border-b bg-white sticky top-0 z-10">
+          {/* TOP BAR */}
+          <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 bg-white sticky top-0 z-10">
             <Avatar>
-              <AvatarImage src={selectedUser?.profilePicture} />
-              <AvatarFallback>
-                {selectedUser?.username?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
+              <AvatarImage src={selectedChatUser.profilePicture} />
+              <AvatarFallback>U</AvatarFallback>
             </Avatar>
-            <span className="font-medium">{selectedUser?.username}</span>
+
+            <div>
+              <span>{selectedChatUser.username}</span>
+            </div>
           </div>
 
-          <Messages selectedUser={selectedUser} />
+          {/* MESSAGES */}
+          <Messages selectedUser={selectedChatUser} />
 
-          <div className="flex items-center p-4 border-t">
+          {/* INPUT BAR */}
+          <div className="flex items-center p-4 border-t border-gray-300">
             <Input
               value={textMessage}
               onChange={(e) => setTextMessage(e.target.value)}
-              placeholder="Type a message..."
-              onKeyDown={(e) => e.key === "Enter" && sendMessageHandler()}
+              type="text"
+              className="flex-1 mr-2 focus-visible:ring-transparent"
+              placeholder="Message..."
             />
-            <Button onClick={sendMessageHandler}>Send</Button>
+            <Button onClick={() => sendMessageHandler(selectedChatUser._id)}>
+              Send
+            </Button>
           </div>
         </section>
       ) : (
+        /* EMPTY STATE */
         <div className="flex flex-col items-center justify-center mx-auto">
           <MessageCircleCode className="w-32 h-32 my-4" />
           <h1 className="font-medium">Your messages</h1>
-          <span>Send a message to start a chat.</span>
+          <span>Select someone to start chatting.</span>
         </div>
       )}
     </div>

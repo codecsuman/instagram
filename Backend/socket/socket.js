@@ -1,57 +1,102 @@
+// socket.js
+import dotenv from "dotenv";
+dotenv.config();
+
 import { Server } from "socket.io";
-import jwt from "jsonwebtoken";
-import cookie from "cookie";
+import express from "express";
+import http from "http";
 
-let io = null;
-const userSocketMap = {}; // userId -> socketId
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
-export const initSocket = (server, allowedOrigins) => {
+export const app = express();
+export const server = http.createServer(app);
 
-  io = new Server(server, {
-    cors: {
-      origin: allowedOrigins,
-      credentials: true
-    },
-    transports: ["websocket"],
-    pingTimeout: 60000,
-  });
+// --------------------------------------------
+// SOCKET.IO CONFIG
+// --------------------------------------------
+export const io = new Server(server, {
+  cors: {
+    origin: [CLIENT_URL],
+    credentials: true,
+  },
+  transports: ["websocket", "polling"], // more stable
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
 
-  io.on("connection", (socket) => {
-    try {
+// --------------------------------------------
+// USER SOCKET MAPPING (supports MULTIPLE sockets)
+// --------------------------------------------
+// userId -> Set of socketIds
+const userSocketMap = {};
 
-      // ✅ Parse cookies SAFELY
-      const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
-      const token =
-        socket.handshake.auth?.token ||
-        cookies.token;
-
-      if (!token) {
-        console.log("❌ Socket rejected: No token");
-        socket.disconnect(true);
-        return;
-      }
-
-      // ✅ Verify token
-      const decoded = jwt.verify(token, process.env.SECRET_KEY);
-      const userId = decoded.userId.toString();
-
-      // ✅ Store socket
-      userSocketMap[userId] = socket.id;
-
-      // ✅ Notify
-      io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
-      socket.on("disconnect", () => {
-        delete userSocketMap[userId];
-        io.emit("getOnlineUsers", Object.keys(userSocketMap));
-      });
-
-    } catch (error) {
-      console.error("❌ Socket auth failed:", error.message);
-      socket.disconnect(true);
-    }
-  });
+export const getReceiverSocketIds = (userId) => {
+  return userSocketMap[userId] || new Set();
 };
 
-export const getReceiverSocketId = (receiverId) => userSocketMap[receiverId];
-export const getIO = () => io;
+// --------------------------------------------
+// MAIN SOCKET EVENTS
+// --------------------------------------------
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query?.userId;
+
+  if (!userId) {
+    console.log("❌ No userId found in handshake");
+    socket.disconnect();
+    return;
+  }
+
+  // Initialize SET if not exists
+  if (!userSocketMap[userId]) {
+    userSocketMap[userId] = new Set();
+  }
+
+  userSocketMap[userId].add(socket.id);
+
+  console.log(`✅ User connected: ${userId} | Socket: ${socket.id}`);
+
+  // Send updated online users list
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+
+  // -------------------------
+  // REAL-TIME MESSAGE
+  // -------------------------
+  socket.on("sendMessage", ({ receiverId, message }) => {
+    const receiverSockets = getReceiverSocketIds(receiverId);
+
+    receiverSockets.forEach((sockId) => {
+      io.to(sockId).emit("newMessage", message);
+    });
+  });
+
+
+  // -------------------------
+  // REAL-TIME NOTIFICATION
+  // -------------------------
+  socket.on("sendNotification", ({ receiverId, notification }) => {
+    const receiverSockets = getReceiverSocketIds(receiverId);
+
+    receiverSockets.forEach((sockId) => {
+      io.to(sockId).emit("notification", notification);
+    });
+  });
+
+
+  // -------------------------
+  // DISCONNECT
+  // -------------------------
+  socket.on("disconnect", () => {
+    if (userSocketMap[userId]) {
+      userSocketMap[userId].delete(socket.id);
+
+      if (userSocketMap[userId].size === 0) {
+        delete userSocketMap[userId];
+      }
+    }
+
+    console.log(`❌ User disconnected: ${userId} | Socket: ${socket.id}`);
+
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+});

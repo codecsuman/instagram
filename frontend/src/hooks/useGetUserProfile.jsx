@@ -1,43 +1,50 @@
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { setUserProfile, clearAuthUser } from "../redux/authSlice";
-import api from "../lib/api";
+// src/hooks/useGetUserProfile.js
+
+import { setUserProfile } from "@/redux/authSlice";
+import api from "@/lib/api";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 const useGetUserProfile = (userId) => {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      dispatch(setUserProfile(null));
+      return;
+    }
 
-    const controller = new AbortController();
+    let isMounted = true;
 
     const fetchUserProfile = async () => {
       try {
-        const res = await api.get(`/api/v1/user/${userId}/profile`, {
-          signal: controller.signal,
-        });
+        setLoading(true);
 
-        if (res?.data?.success) {
+        const res = await api.get(`/user/${userId}/profile`);
+
+        if (isMounted && res.data.success) {
           dispatch(setUserProfile(res.data.user));
         }
       } catch (error) {
-
-        // ✅ Ignore cancellations
-        if (error.name === "CanceledError") return;
-
-        // ✅ If auth expired -> logout user
-        if (error.response?.status === 401) {
-          dispatch(clearAuthUser());
-        }
-
-        console.error("❌ Profile fetch error:", error?.response?.data || error.message);
+        console.log("❌ Error loading user profile:", error);
+        if (isMounted) dispatch(setUserProfile(null));
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchUserProfile();
 
-    return () => controller.abort();
-  }, [userId, dispatch]);
+    // Refetch profile when logged-in user changes (optional but correct)
+    return () => {
+      isMounted = false;
+    };
+  }, [userId, dispatch, user?._id]);
+
+  return { loading };
 };
 
 export default useGetUserProfile;

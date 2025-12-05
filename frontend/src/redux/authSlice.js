@@ -1,72 +1,65 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const savedUser = localStorage.getItem("user");
-const savedToken = localStorage.getItem("token");
-
 const initialState = {
-  user: savedUser
-    ? { ...JSON.parse(savedUser), token: savedToken || null }
-    : null,
-
-  suggestedUsers: [],
-  userProfile: null,
-  selectedUser: null,
+  user: null,                // Logged-in user
+  suggestedUsers: [],        // List of suggestions
+  userProfile: null,         // Profile being viewed
+  selectedUserForProfile: null, // Avoids conflict with chat slice
 };
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
+
   reducers: {
-
-    // ✅ LOGIN / RESTORE USER
+    // -----------------------------------
+    // SET AUTH USER
+    // -----------------------------------
     setAuthUser: (state, action) => {
-      const user = action.payload;
-
-      state.user = user;
-
-      // ✅ Persist login
-      localStorage.setItem("user", JSON.stringify(user));
-
-      if (user?.token) {
-        localStorage.setItem("token", user.token);
-      }
+      state.user = action.payload || null; // always safe
     },
 
-    // ✅ LOGOUT (FULL CLEANUP)
-    clearAuthUser: (state) => {
+    // -----------------------------------
+    // LOGOUT USER (complete reset)
+    // -----------------------------------
+    logoutUser: (state) => {
       state.user = null;
-      state.userProfile = null;
-      state.selectedUser = null;
       state.suggestedUsers = [];
-
-      // ✅ Cleanup storage
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
+      state.userProfile = null;
+      state.selectedUserForProfile = null;
     },
 
-    // ✅ SUGGESTED USERS
+    // -----------------------------------
+    // SUGGESTED USERS
+    // -----------------------------------
     setSuggestedUsers: (state, action) => {
-      state.suggestedUsers = action.payload;
+      state.suggestedUsers = Array.isArray(action.payload)
+        ? action.payload
+        : [];
     },
 
-    // ✅ PROFILE
+    // -----------------------------------
+    // VIEWED PROFILE DATA
+    // -----------------------------------
     setUserProfile: (state, action) => {
-      state.userProfile = action.payload;
+      state.userProfile = action.payload || null;
     },
 
-    // ✅ CHAT USER
+    // -----------------------------------
+    // SELECT PROFILE USER
+    // -----------------------------------
     setSelectedUser: (state, action) => {
-      state.selectedUser = action.payload;
-    }
-  }
+      state.selectedUserForProfile = action.payload || null;
+    },
+  },
 });
 
 export const {
   setAuthUser,
-  clearAuthUser,
+  logoutUser,
   setSuggestedUsers,
   setUserProfile,
-  setSelectedUser
+  setSelectedUser,
 } = authSlice.actions;
 
 export default authSlice.reducer;

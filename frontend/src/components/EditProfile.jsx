@@ -1,111 +1,132 @@
-import { useRef, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Button } from './ui/button'
-import { Textarea } from './ui/textarea'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import api from '@/lib/api'
-import { Loader2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
-import { setAuthUser } from '@/redux/authSlice'
+import React, { useRef, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { setAuthUser } from "@/redux/authSlice";
+import api from "@/lib/api";
+import { readFileAsDataURL } from "@/lib/utils";
 
 const EditProfile = () => {
-  const imageRef = useRef(null)
-  const { user } = useSelector(state => state.auth)
-  const [loading, setLoading] = useState(false)
+  const imageRef = useRef();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { user } = useSelector((store) => store.auth);
+
+  const [loading, setLoading] = useState(false);
+
   const [input, setInput] = useState({
-    profilePhoto: null,
-    bio: user?.bio || "",
-    gender: user?.gender || ""
-  })
+    bio: "",
+    gender: "",
+    profilePhotoFile: null,
+    profilePhotoPreview: "",
+  });
 
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
+  // ---------------------------------------------------
+  // INITIAL LOAD
+  // ---------------------------------------------------
+  useEffect(() => {
+    if (user) {
+      setInput({
+        bio: user?.bio || "",
+        gender: user?.gender || "",
+        profilePhotoFile: null,
+        profilePhotoPreview: user?.profilePicture || "",
+      });
+    }
+  }, [user]);
 
-  const fileChangeHandler = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // ---------------------------------------------------
+  // FILE UPLOAD
+  // ---------------------------------------------------
+  const fileChangeHandler = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // ✅ Validate image
     if (!file.type.startsWith("image/")) {
-      toast.error("Only image files allowed")
-      return
+      toast.error("Only image files are allowed");
+      return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB")
-      return
-    }
+    const preview = await readFileAsDataURL(file);
 
-    setInput(prev => ({ ...prev, profilePhoto: file }))
-  }
+    setInput((prev) => ({
+      ...prev,
+      profilePhotoFile: file,
+      profilePhotoPreview: preview,
+    }));
+  };
 
-  const selectChangeHandler = (value) => {
-    setInput(prev => ({ ...prev, gender: value }))
-  }
-
+  // ---------------------------------------------------
+  // SUBMIT PROFILE UPDATE
+  // ---------------------------------------------------
   const editProfileHandler = async () => {
+    if (loading) return;
 
-    if (
-      !input.profilePhoto &&
-      input.bio === user?.bio &&
-      input.gender === user?.gender
-    ) {
-      toast.error("No changes detected")
-      return
+    const formData = new FormData();
+
+    formData.append("bio", input.bio.trim());
+    if (input.gender) formData.append("gender", input.gender);
+
+    // field name MUST MATCH backend multer
+    if (input.profilePhotoFile) {
+      formData.append("profilePicture", input.profilePhotoFile);
     }
-
-    const formData = new FormData()
-    formData.append("bio", input.bio)
-    formData.append("gender", input.gender)
-    if (input.profilePhoto) formData.append("profilePhoto", input.profilePhoto)
 
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const res = await api.post("/api/v1/user/profile/edit", formData) // ✅ removed header
+      const res = await api.patch("/user/profile/edit", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      if (res.data?.success) {
-        const updatedUserData = {
-          ...user,
-          bio: res.data.user?.bio,
-          profilePicture: res.data.user?.profilePicture,
-          gender: res.data.user?.gender
-        }
+      if (res.data.success) {
+        // Update redux + localStorage
+        dispatch(setAuthUser(res.data.user));
 
-        dispatch(setAuthUser(updatedUserData))
-        toast.success(res.data.message || "Profile updated")
-        navigate(`/profile/${user?._id}`, { replace: true })
+        toast.success("Profile updated successfully");
+
+        navigate(`/profile/${res.data.user._id}`);
       }
-
     } catch (error) {
-      console.error("Update error:", error)
-      toast.error(error?.response?.data?.message || "Update failed")
+      console.log(error);
+      toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex max-w-2xl mx-auto pl-10">
       <section className="flex flex-col gap-6 w-full my-8">
         <h1 className="font-bold text-xl">Edit Profile</h1>
 
-        {/* USER HEADER */}
+        {/* PROFILE ROW */}
         <div className="flex items-center justify-between bg-gray-100 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={user?.profilePicture} />
+              <AvatarImage src={input.profilePhotoPreview} alt="profile" />
               <AvatarFallback>
-                {user?.username?.[0]?.toUpperCase() || "U"}
+                {user?.username?.charAt(0)?.toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
 
             <div>
               <h1 className="font-bold text-sm">{user?.username}</h1>
-              <span className="text-gray-600">
-                {user?.bio || "Bio here..."}
+              <span className="text-gray-600 text-xs">
+                {input.bio || "Add a bio..."}
               </span>
             </div>
           </div>
@@ -114,7 +135,7 @@ const EditProfile = () => {
             ref={imageRef}
             onChange={fileChangeHandler}
             type="file"
-            hidden
+            className="hidden"
             accept="image/*"
           />
 
@@ -132,7 +153,7 @@ const EditProfile = () => {
           <Textarea
             value={input.bio}
             onChange={(e) =>
-              setInput(prev => ({ ...prev, bio: e.target.value }))
+              setInput((prev) => ({ ...prev, bio: e.target.value }))
             }
             className="focus-visible:ring-transparent"
             placeholder="Write something about yourself..."
@@ -142,7 +163,12 @@ const EditProfile = () => {
         {/* GENDER */}
         <div>
           <h1 className="font-bold mb-2">Gender</h1>
-          <Select value={input.gender} onValueChange={selectChangeHandler}>
+          <Select
+            value={input.gender}
+            onValueChange={(value) =>
+              setInput((prev) => ({ ...prev, gender: value }))
+            }
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select gender" />
             </SelectTrigger>
@@ -159,7 +185,7 @@ const EditProfile = () => {
         {/* SUBMIT */}
         <div className="flex justify-end">
           {loading ? (
-            <Button disabled className="w-fit bg-[#0095F6]">
+            <Button className="w-fit bg-[#0095F6] hover:bg-[#2a8ccd]">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Please wait
             </Button>
@@ -172,10 +198,9 @@ const EditProfile = () => {
             </Button>
           )}
         </div>
-
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default EditProfile
+export default EditProfile;
