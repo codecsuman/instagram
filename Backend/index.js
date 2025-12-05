@@ -30,7 +30,7 @@ app.use(cookieParser());
 // ----------------------------
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://instagram-omega-drab.vercel.app",
+  "https://instagram-vert-nu.vercel.app",
 ];
 
 app.use(
