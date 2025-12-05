@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 const useGetAllPost = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth); // reload posts if user changes
+  const { user } = useSelector((state) => state.auth); // refetch on login/logout
 
   useEffect(() => {
     let isMounted = true;
@@ -14,21 +14,21 @@ const useGetAllPost = () => {
       try {
         const res = await api.get("/post/all");
 
-        if (isMounted && res.data.success) {
+        if (isMounted && res?.data?.success) {
           dispatch(setPosts(res.data.posts));
         }
       } catch (error) {
-        console.log("❌ Error loading posts:", error);
+        console.error("❌ Failed to fetch posts:", error?.response?.data || error);
       }
     };
 
     fetchAllPosts();
 
-    // Cleanup to avoid state update after unmount
     return () => {
       isMounted = false;
     };
-  }, [dispatch, user]); // 🔥 refetch when user logs in OR logs out
+  }, [user, dispatch]);
+
 };
 
 export default useGetAllPost;

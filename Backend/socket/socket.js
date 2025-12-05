@@ -1,4 +1,3 @@
-// socket.js
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -16,87 +15,89 @@ export const server = http.createServer(app);
 // --------------------------------------------
 export const io = new Server(server, {
   cors: {
-    origin: [CLIENT_URL],
+    origin: CLIENT_URL,
     credentials: true,
   },
-  transports: ["websocket", "polling"], // more stable
+  transports: ["websocket"],   // Best for Render
   pingTimeout: 60000,
   pingInterval: 25000,
 });
 
 // --------------------------------------------
-// USER SOCKET MAPPING (supports MULTIPLE sockets)
+// USER SOCKET MAP
 // --------------------------------------------
-// userId -> Set of socketIds
-const userSocketMap = {};
+const userSocketMap = new Map(); // safer than plain object
 
 export const getReceiverSocketIds = (userId) => {
-  return userSocketMap[userId] || new Set();
+  return userSocketMap.get(userId) || new Set();
 };
 
 // --------------------------------------------
-// MAIN SOCKET EVENTS
+// SOCKET EVENTS
 // --------------------------------------------
 io.on("connection", (socket) => {
-  const userId = socket.handshake.query?.userId;
+  try {
+    const userId = socket.handshake.query?.userId;
 
-  if (!userId) {
-    console.log("❌ No userId found in handshake");
-    socket.disconnect();
-    return;
-  }
-
-  // Initialize SET if not exists
-  if (!userSocketMap[userId]) {
-    userSocketMap[userId] = new Set();
-  }
-
-  userSocketMap[userId].add(socket.id);
-
-  console.log(`✅ User connected: ${userId} | Socket: ${socket.id}`);
-
-  // Send updated online users list
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
-
-  // -------------------------
-  // REAL-TIME MESSAGE
-  // -------------------------
-  socket.on("sendMessage", ({ receiverId, message }) => {
-    const receiverSockets = getReceiverSocketIds(receiverId);
-
-    receiverSockets.forEach((sockId) => {
-      io.to(sockId).emit("newMessage", message);
-    });
-  });
-
-
-  // -------------------------
-  // REAL-TIME NOTIFICATION
-  // -------------------------
-  socket.on("sendNotification", ({ receiverId, notification }) => {
-    const receiverSockets = getReceiverSocketIds(receiverId);
-
-    receiverSockets.forEach((sockId) => {
-      io.to(sockId).emit("notification", notification);
-    });
-  });
-
-
-  // -------------------------
-  // DISCONNECT
-  // -------------------------
-  socket.on("disconnect", () => {
-    if (userSocketMap[userId]) {
-      userSocketMap[userId].delete(socket.id);
-
-      if (userSocketMap[userId].size === 0) {
-        delete userSocketMap[userId];
-      }
+    if (!userId) {
+      console.log("❌ Socket connection rejected: No userId");
+      socket.disconnect();
+      return;
     }
 
-    console.log(`❌ User disconnected: ${userId} | Socket: ${socket.id}`);
+    // Add socket under user
+    if (!userSocketMap.has(userId)) {
+      userSocketMap.set(userId, new Set());
+    }
 
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
-  });
+    userSocketMap.get(userId).add(socket.id);
+
+    console.log(`✅ User connected: ${userId}, Socket: ${socket.id}`);
+
+    // Emit online users list
+    io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
+
+    // -------------------------
+    // MESSAGE DELIVERY
+    // -------------------------
+    socket.on("sendMessage", ({ receiverId, message }) => {
+      const receiverSockets = getReceiverSocketIds(receiverId);
+
+      receiverSockets.forEach((sockId) => {
+        io.to(sockId).emit("newMessage", message);
+      });
+    });
+
+    // -------------------------
+    // NOTIFICATIONS
+    // -------------------------
+    socket.on("sendNotification", ({ receiverId, notification }) => {
+      const receiverSockets = getReceiverSocketIds(receiverId);
+
+      receiverSockets.forEach((sockId) => {
+        io.to(sockId).emit("notification", notification);
+      });
+    });
+
+    // -------------------------
+    // CLEANUP ON DISCONNECT
+    // -------------------------
+    socket.on("disconnect", () => {
+      if (userSocketMap.has(userId)) {
+        userSocketMap.get(userId).delete(socket.id);
+
+        if (userSocketMap.get(userId).size === 0) {
+          userSocketMap.delete(userId);
+        }
+      }
+
+      console.log(`❌ User disconnected: ${userId}, Socket: ${socket.id}`);
+
+      io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
+    });
+
+  } catch (err) {
+    console.error("❌ Socket error:", err.message);
+    socket.disconnect();
+  }
 });

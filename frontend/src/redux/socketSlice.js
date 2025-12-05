@@ -4,48 +4,47 @@ const socketSlice = createSlice({
   name: "socketio",
 
   initialState: {
-    socket: null,          // ← actual socket instance
-    onlineUsers: [],       // ← online users from server
-    isConnected: false,    // ← socket connected flag
-    socketId: null,        // ← current socket ID
-    reconnectAttempts: 0,  // ← track reconnect tries (optional)
+    socket: null,         
+    onlineUsers: [],      
+    isConnected: false,   
+    socketId: null,       
+    reconnectAttempts: 0, 
   },
 
   reducers: {
     // Save socket instance
     setSocket: (state, action) => {
-      state.socket = action.payload;
+      state.socket = action.payload || null;
     },
 
-    // Online users list
+    // Online users
     setOnlineUsers: (state, action) => {
-      state.onlineUsers = action.payload || [];
+      state.onlineUsers = Array.isArray(action.payload) ? action.payload : [];
     },
 
-    // Connected or disconnected
+    // Connection status
     setSocketConnected: (state, action) => {
-      state.isConnected = action.payload;
+      state.isConnected = Boolean(action.payload);
     },
 
-    // Save socket ID
+    // Current socket ID
     setSocketId: (state, action) => {
-      state.socketId = action.payload;
+      state.socketId = action.payload || null;
     },
 
-    // Increase reconnect attempts
+    // Reconnection tracker
     incrementReconnectAttempts: (state) => {
       state.reconnectAttempts += 1;
     },
 
-    // Reset reconnect attempts
     resetReconnectAttempts: (state) => {
       state.reconnectAttempts = 0;
     },
 
-    // LOGOUT → Reset everything
+    // LOGOUT → Reset socket state
     clearOnlineUsers: (state) => {
-      state.onlineUsers = [];
       state.socket = null;
+      state.onlineUsers = [];
       state.isConnected = false;
       state.socketId = null;
       state.reconnectAttempts = 0;

@@ -6,18 +6,18 @@ import { useSelector } from "react-redux";
 import useGetRTM from "@/hooks/useGetRTM";
 
 const Messages = ({ selectedUser }) => {
-  // Read socket from global window (set in App.jsx)
-  const socket = window._socket || null;
+  // ✅ CORRECT SOCKET REFERENCE
+  const socket = window.socketRef || null;
 
   const { messages } = useSelector((store) => store.chat);
   const { user } = useSelector((store) => store.auth);
 
-  const bottomRef = useRef();
+  const bottomRef = useRef(null);
 
-  // Real-time listener
+  // Socket listener
   useGetRTM(socket);
 
-  // Smooth scroll on message update
+  // Auto-scroll on new message
   useEffect(() => {
     setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,10 +27,10 @@ const Messages = ({ selectedUser }) => {
   return (
     <div className="flex flex-col h-full">
 
-      {/* TOP BAR */}
+      {/* HEADER */}
       <div className="flex flex-col items-center justify-center py-4 border-b">
         <Avatar className="h-20 w-20">
-          <AvatarImage src={selectedUser?.profilePicture} alt="profile" />
+          <AvatarImage src={selectedUser?.profilePicture} />
           <AvatarFallback>
             {selectedUser?.username?.charAt(0)?.toUpperCase()}
           </AvatarFallback>
@@ -45,19 +45,18 @@ const Messages = ({ selectedUser }) => {
         </Link>
       </div>
 
-      {/* CHAT AREA */}
+      {/* MESSAGES */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
 
-        {/* EMPTY STATE */}
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-20">
-            No messages yet — start the conversation!
+            No messages yet — start chatting!
           </div>
         )}
 
         {messages.map((msg) => {
           const fromMe =
-            msg.senderId?.toString() === user?._id?.toString();
+            String(msg.senderId) === String(user?._id);
 
           return (
             <div
@@ -65,7 +64,7 @@ const Messages = ({ selectedUser }) => {
               className={`flex ${fromMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`p-2 rounded-lg max-w-xs break-words shadow-sm ${
+                className={`p-2 max-w-xs shadow-sm break-words rounded-lg ${
                   fromMe
                     ? "bg-blue-500 text-white rounded-br-none"
                     : "bg-gray-200 text-black rounded-bl-none"

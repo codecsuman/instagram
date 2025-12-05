@@ -15,18 +15,11 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "@/redux/authSlice";
 import CreatePost from "./CreatePost";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
 import { clearNotifications } from "@/redux/rtnSlice";
 import { clearOnlineUsers } from "@/redux/socketSlice";
-import {
-  setMessages,
-  setSelectedChatUser,
-} from "@/redux/chatSlice";
+import { setMessages, setSelectedChatUser } from "@/redux/chatSlice";
 import { setPosts, setSelectedPost } from "@/redux/postSlice";
 
 const LeftSidebar = () => {
@@ -35,8 +28,8 @@ const LeftSidebar = () => {
 
   const { user = {} } = useSelector((store) => store.auth);
 
-  // FIX 🔥 ensure array is ALWAYS defined
-  const { likeNotification = [] } = useSelector(
+  // ✅ FIXED
+  const { notifications = [] } = useSelector(
     (store) => store.realTimeNotification
   );
 
@@ -91,8 +84,10 @@ const LeftSidebar = () => {
     {
       icon: (
         <Avatar className="w-6 h-6">
-          <AvatarImage src={user?.profilePicture || undefined} />
-          <AvatarFallback>{user?.username?.charAt(0)}</AvatarFallback>
+          <AvatarImage src={user?.profilePicture} />
+          <AvatarFallback>
+            {user?.username?.charAt(0)?.toUpperCase()}
+          </AvatarFallback>
         </Avatar>
       ),
       text: "Profile",
@@ -101,9 +96,9 @@ const LeftSidebar = () => {
   ];
 
   return (
-    <div className="fixed left-0 top-0 h-screen border-r border-gray-300 w-[250px] px-4 z-20 bg-white">
+    <div className="fixed left-0 top-0 h-screen border-r w-[250px] z-20 bg-white px-4">
       <div className="flex flex-col">
-        <h1 className="my-8 pl-3 font-bold text-xl">LOGO</h1>
+        <h1 className="my-8 font-bold text-xl">LOGO</h1>
 
         <div>
           {sidebarItems.map((item, i) => (
@@ -114,7 +109,7 @@ const LeftSidebar = () => {
                   ? logoutHandler()
                   : sidebarHandler(item.text)
               }
-              className="flex items-center gap-3 hover:bg-gray-100 rounded-lg cursor-pointer p-3 my-2 relative"
+              className="flex gap-3 items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer my-2"
             >
               {item.icon}
               <span>{item.text}</span>
@@ -124,31 +119,29 @@ const LeftSidebar = () => {
           {/* NOTIFICATIONS */}
           <Popover onOpenChange={(open) => open && dispatch(clearNotifications())}>
             <PopoverTrigger asChild>
-              <div className="flex items-center gap-3 hover:bg-gray-100 rounded-lg cursor-pointer p-3 my-2 relative">
+              <div className="flex items-center gap-3 hover:bg-gray-100 p-3 my-2 rounded-lg cursor-pointer relative">
                 <Heart />
                 <span>Notifications</span>
 
-                {likeNotification.length > 0 && (
+                {notifications.length > 0 && (
                   <Button
                     size="icon"
                     className="absolute right-3 top-1.5 h-5 w-5 bg-red-600 text-xs"
                   >
-                    {likeNotification.length}
+                    {notifications.length}
                   </Button>
                 )}
               </div>
             </PopoverTrigger>
 
             <PopoverContent className="w-64">
-              {likeNotification.length === 0 ? (
+              {notifications.length === 0 ? (
                 <p>No notifications</p>
               ) : (
-                likeNotification.map((notif, idx) => (
-                  <div key={idx} className="flex items-center gap-2 my-2">
+                notifications.map((notif, idx) => (
+                  <div key={idx} className="flex gap-2 items-center my-2">
                     <Avatar>
-                      <AvatarImage
-                        src={notif.userDetails?.profilePicture || undefined}
-                      />
+                      <AvatarImage src={notif.userDetails?.profilePicture} />
                       <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <p className="text-sm">

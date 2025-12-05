@@ -1,5 +1,3 @@
-// src/hooks/useGetSuggestedUsers.js
-
 import { setSuggestedUsers } from "@/redux/authSlice";
 import api from "@/lib/api";
 import { useEffect, useState } from "react";
@@ -12,7 +10,6 @@ const useGetSuggestedUsers = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // No user logged in → no suggested users
     if (!user?._id) {
       dispatch(setSuggestedUsers([]));
       return;
@@ -26,17 +23,20 @@ const useGetSuggestedUsers = () => {
 
         const res = await api.get("/user/suggested");
 
-        if (isMounted && res.data.success) {
+        if (isMounted && res?.data?.success) {
           dispatch(setSuggestedUsers(res.data.users));
         }
+
       } catch (error) {
-        console.log("❌ Error loading suggested users:", error);
+        console.error(
+          "❌ Failed to load suggested users:",
+          error?.response?.data || error
+        );
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
-    // Always refresh on login OR account change
     fetchSuggestedUsers();
 
     return () => {

@@ -11,7 +11,7 @@ const Signup = () => {
   const [input, setInput] = useState({
     username: "",
     email: "",
-    password: ""
+    password: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -19,28 +19,28 @@ const Signup = () => {
   const navigate = useNavigate();
   const { user } = useSelector((store) => store.auth);
 
-  // Redirect if logged in
+  // Redirect if already logged in
   useEffect(() => {
-    if (user) navigate("/");
+    if (user?._id) navigate("/", { replace: true });
   }, [user, navigate]);
 
   const changeEventHandler = (e) => {
-    setInput({ ...input, [e.target.name]: e.target.value });
+    setInput((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
-  // ---------------------------
-  // FORM VALIDATION
-  // ---------------------------
+  // ---------------- VALIDATION ----------------
   const validateData = () => {
     if (!input.username.trim() || input.username.length < 3) {
-      toast.error("Username must be at least 3 characters long");
+      toast.error("Username must be at least 3 characters");
       return false;
     }
 
-    // Email regex check
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(input.email)) {
-      toast.error("Please enter a valid email address");
+      toast.error("Invalid email address");
       return false;
     }
 
@@ -52,12 +52,9 @@ const Signup = () => {
     return true;
   };
 
-  // ---------------------------
-  // SIGNUP HANDLER
-  // ---------------------------
+  // ---------------- SIGNUP ----------------
   const signupHandler = async (e) => {
     e.preventDefault();
-
     if (!validateData()) return;
 
     try {
@@ -74,38 +71,37 @@ const Signup = () => {
 
       setInput({ username: "", email: "", password: "" });
 
-      navigate("/login ");
+      navigate("/login"); // ✅ Correct line
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      toast.error(error?.response?.data?.message || "Signup failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center w-screen h-screen">
+    <div className="flex items-center justify-center min-h-screen">
       <form
         onSubmit={signupHandler}
         className="shadow-lg flex flex-col gap-5 p-8 w-[350px]"
       >
         <div className="my-4 text-center">
           <h1 className="font-bold text-xl">LOGO</h1>
-          <p className="text-sm">Signup to see photos & videos from your friends</p>
+          <p className="text-sm">
+            Signup to see photos & videos from your friends
+          </p>
         </div>
 
-        {/* USERNAME */}
         <div>
           <span className="font-medium">Username</span>
           <Input
-            type="text"
             name="username"
             value={input.username}
             onChange={changeEventHandler}
-            className="focus-visible:ring-transparent my-2"
+            className="my-2"
           />
         </div>
 
-        {/* EMAIL */}
         <div>
           <span className="font-medium">Email</span>
           <Input
@@ -113,11 +109,10 @@ const Signup = () => {
             name="email"
             value={input.email}
             onChange={changeEventHandler}
-            className="focus-visible:ring-transparent my-2"
+            className="my-2"
           />
         </div>
 
-        {/* PASSWORD */}
         <div>
           <span className="font-medium">Password</span>
           <Input
@@ -125,24 +120,22 @@ const Signup = () => {
             name="password"
             value={input.password}
             onChange={changeEventHandler}
-            className="focus-visible:ring-transparent my-2"
+            className="my-2"
           />
         </div>
 
-        {/* BUTTON */}
-        {loading ? (
-          <Button disabled>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Please wait
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            disabled={!input.username || !input.email || !input.password}
-          >
-            Signup
-          </Button>
-        )}
+        <Button
+          type="submit"
+          disabled={loading || !input.username || !input.email || !input.password}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 animate-spin" /> Please wait
+            </>
+          ) : (
+            "Signup"
+          )}
+        </Button>
 
         <span className="text-center text-sm">
           Already have an account?{" "}

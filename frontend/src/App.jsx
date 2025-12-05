@@ -19,9 +19,8 @@ import { setLikeNotification } from "./redux/rtnSlice";
 // Socket.io
 import { io } from "socket.io-client";
 
-
 // --------------------------------------------
-// ROUTES
+// ROUTER
 // --------------------------------------------
 const router = createBrowserRouter([
   {
@@ -32,10 +31,10 @@ const router = createBrowserRouter([
       </ProtectedRoutes>
     ),
     children: [
-      { path: "/", element: <Home /> },
-      { path: "/profile/:id", element: <Profile /> },
-      { path: "/account/edit", element: <EditProfile /> },
-      { path: "/chat", element: <ChatPage /> },
+      { index: true, element: <Home /> },
+      { path: "profile/:id", element: <Profile /> },
+      { path: "account/edit", element: <EditProfile /> },
+      { path: "chat", element: <ChatPage /> },
     ],
   },
 
@@ -44,9 +43,8 @@ const router = createBrowserRouter([
   { path: "/signup", element: <Signup /> },
 ]);
 
-
 // --------------------------------------------
-// MAIN APP
+// MAIN APP COMPONENT
 // --------------------------------------------
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -55,7 +53,6 @@ function App() {
   useEffect(() => {
     if (!user) return;
 
-    // Create socket only when user is logged in
     const socket = io(import.meta.env.VITE_API_URL, {
       query: { userId: user._id },
       transports: ["websocket", "polling"],
@@ -64,21 +61,31 @@ function App() {
       reconnectionAttempts: 10,
     });
 
-    // Online users
+    // ✅ MAKE SOCKET GLOBAL
+    window._socket = socket;
+
+    socket.on("connect", () => {
+      console.log("✅ Socket Connected:", socket.id);
+    });
+
     socket.on("getOnlineUsers", (users) => {
       dispatch(setOnlineUsers(users));
     });
 
-    // Real-time notifications
     socket.on("notification", (noti) => {
       dispatch(setLikeNotification(noti));
     });
 
-    // cleanup when component unmounts OR user logs out
+    socket.on("disconnect", () => {
+      console.log("❌ Socket Disconnected");
+    });
+
+    // CLEANUP
     return () => {
       socket.disconnect();
+      window._socket = null;
     };
-  }, [user]);
+  }, [user, dispatch]);
 
   return <RouterProvider router={router} />;
 }

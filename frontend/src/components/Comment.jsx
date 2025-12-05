@@ -9,11 +9,7 @@ dayjs.extend(relativeTime);
 const Comment = ({ comment }) => {
   if (!comment) return null;
 
-  const {
-    author = {},
-    text = "",
-    createdAt,
-  } = comment;
+  const { author = {}, text = "", createdAt } = comment;
 
   const username = author.username || "Unknown";
   const profileImage = author.profilePicture || "";
@@ -22,15 +18,13 @@ const Comment = ({ comment }) => {
   return (
     <div className="my-2">
       <div className="flex gap-3 items-start">
-
         <Avatar className="w-10 h-10">
           <AvatarImage src={profileImage} alt={username} />
           <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
 
         <div className="flex flex-col leading-tight break-words w-full">
-
-          <Link to={`/profile/${author._id}`}>
+          <Link to={`/profile/${author._id || ""}`}>
             <span className="text-sm font-bold hover:underline">
               {username}
             </span>
@@ -40,10 +34,11 @@ const Comment = ({ comment }) => {
             {text}
           </span>
 
-          <span className="text-xs text-gray-500 mt-1">
-            {createdAt ? dayjs(createdAt).fromNow() : ""}
-          </span>
-
+          {createdAt && (
+            <span className="text-xs text-gray-500 mt-1">
+              {dayjs(createdAt).fromNow()}
+            </span>
+          )}
         </div>
       </div>
     </div>

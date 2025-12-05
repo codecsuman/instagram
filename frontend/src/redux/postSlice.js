@@ -35,7 +35,7 @@ const postSlice = createSlice({
         p._id === updated._id ? updated : p
       );
 
-      // Update modal-selected post too
+      // Also update selected modal post
       if (state.selectedPost?._id === updated._id) {
         state.selectedPost = updated;
       }
@@ -49,19 +49,15 @@ const postSlice = createSlice({
       const post = state.posts.find((p) => p._id === postId);
       if (!post) return;
 
-      // Ensure likes is array
       if (!Array.isArray(post.likes)) post.likes = [];
 
       const uid = userId.toString();
       const exists = post.likes.some((id) => id.toString() === uid);
 
-      if (exists) {
-        post.likes = post.likes.filter((id) => id.toString() !== uid);
-      } else {
-        post.likes.push(uid);
-      }
+      post.likes = exists
+        ? post.likes.filter((id) => id.toString() !== uid)
+        : [...post.likes, uid];
 
-      // also update selectedPost
       if (state.selectedPost?._id === postId) {
         state.selectedPost.likes = post.likes;
       }
@@ -72,21 +68,22 @@ const postSlice = createSlice({
     // -----------------------------
     addCommentToPost: (state, action) => {
       const { postId, comment } = action.payload;
-
       const post = state.posts.find((p) => p._id === postId);
-      if (!post) return;
+      if (!post || !comment?._id) return;
 
       if (!Array.isArray(post.comments)) post.comments = [];
 
-      // Prevent duplicates
       const exists = post.comments.some((c) => c._id === comment._id);
       if (!exists) post.comments.push(comment);
 
-      // Also update selectedPost
+      // Also update selected modal post
       if (state.selectedPost?._id === postId) {
         if (!Array.isArray(state.selectedPost.comments))
           state.selectedPost.comments = [];
-        if (!state.selectedPost.comments.some((c) => c._id === comment._id)) {
+
+        if (
+          !state.selectedPost.comments.some((c) => c._id === comment._id)
+        ) {
           state.selectedPost.comments.push(comment);
         }
       }
@@ -97,12 +94,13 @@ const postSlice = createSlice({
     // -----------------------------
     toggleBookmark: (state, action) => {
       const { postId, type } = action.payload;
+      const saved = type === "saved";
 
       const post = state.posts.find((p) => p._id === postId);
-      if (post) post.isBookmarked = type === "saved";
+      if (post) post.isBookmarked = saved;
 
       if (state.selectedPost?._id === postId) {
-        state.selectedPost.isBookmarked = type === "saved";
+        state.selectedPost.isBookmarked = saved;
       }
     },
 

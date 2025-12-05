@@ -7,24 +7,26 @@ import SuggestedUsers from "./SuggestedUsers";
 const RightSidebar = () => {
   const { user } = useSelector((store) => store.auth);
 
-  // Prevent flicker on refresh
   if (!user) return null;
 
   return (
     <div className="
-      hidden lg:block               /* hide on small screens */
-      w-[300px] 
-      pr-10 
-      py-10 
-      sticky top-0                 /* better than fixed */
-      h-screen 
+      hidden lg:block
+      w-[300px]
+      pr-10
+      py-10
+      sticky top-0
+      h-screen
       overflow-y-auto
     ">
       {/* USER INFO */}
       <div className="flex items-center gap-3">
-        <Link to={`/profile/${user._id}`}>
+        <Link to={`/profile/${user?._id}`}>
           <Avatar>
-            <AvatarImage src={user.profilePicture} alt="profile" />
+            <AvatarImage
+              src={user.profilePicture || "/avatar.png"}
+              alt="profile"
+            />
             <AvatarFallback>
               {user.username?.[0]?.toUpperCase()}
             </AvatarFallback>
@@ -32,8 +34,8 @@ const RightSidebar = () => {
         </Link>
 
         <div className="flex flex-col">
-          <Link 
-            to={`/profile/${user._id}`} 
+          <Link
+            to={`/profile/${user?._id}`}
             className="font-semibold text-sm"
           >
             {user.username}
@@ -45,7 +47,6 @@ const RightSidebar = () => {
         </div>
       </div>
 
-      {/* SUGGESTED USERS */}
       <div className="mt-6">
         <SuggestedUsers />
       </div>

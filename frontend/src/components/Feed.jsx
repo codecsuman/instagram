@@ -3,8 +3,7 @@ import Posts from "./Posts";
 import useGetAllPost from "@/hooks/useGetAllPost";
 
 const Feed = () => {
-  // 🔥 Always load posts on feed mount
-  useGetAllPost();
+  useGetAllPost(); // load posts when feed loads
 
   return (
     <div className="flex flex-1 justify-center my-8">

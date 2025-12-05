@@ -22,9 +22,7 @@ const EditProfile = () => {
   const imageRef = useRef();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { user } = useSelector((store) => store.auth);
-
   const [loading, setLoading] = useState(false);
 
   const [input, setInput] = useState({
@@ -34,30 +32,26 @@ const EditProfile = () => {
     profilePhotoPreview: "",
   });
 
-  // ---------------------------------------------------
-  // INITIAL LOAD
-  // ---------------------------------------------------
   useEffect(() => {
     if (user) {
       setInput({
-        bio: user?.bio || "",
-        gender: user?.gender || "",
+        bio: user.bio || "",
+        gender: user.gender || "",
         profilePhotoFile: null,
-        profilePhotoPreview: user?.profilePicture || "",
+        profilePhotoPreview: user.profilePicture || "",
       });
     }
   }, [user]);
 
-  // ---------------------------------------------------
+  // -----------------------
   // FILE UPLOAD
-  // ---------------------------------------------------
+  // -----------------------
   const fileChangeHandler = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Only image files are allowed");
-      return;
+      return toast.error("Please select an image");
     }
 
     const preview = await readFileAsDataURL(file);
@@ -69,18 +63,16 @@ const EditProfile = () => {
     }));
   };
 
-  // ---------------------------------------------------
-  // SUBMIT PROFILE UPDATE
-  // ---------------------------------------------------
+  // -----------------------
+  // SUBMIT
+  // -----------------------
   const editProfileHandler = async () => {
     if (loading) return;
 
     const formData = new FormData();
-
     formData.append("bio", input.bio.trim());
     if (input.gender) formData.append("gender", input.gender);
 
-    // field name MUST MATCH backend multer
     if (input.profilePhotoFile) {
       formData.append("profilePicture", input.profilePhotoFile);
     }
@@ -92,17 +84,14 @@ const EditProfile = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (res.data.success) {
-        // Update redux + localStorage
+      if (res?.data?.success) {
         dispatch(setAuthUser(res.data.user));
-
-        toast.success("Profile updated successfully");
-
+        toast.success("Profile updated!");
         navigate(`/profile/${res.data.user._id}`);
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      console.error("Profile update error:", error?.response?.data || error);
+      toast.error(error?.response?.data?.message || "Update failed");
     } finally {
       setLoading(false);
     }
@@ -113,11 +102,11 @@ const EditProfile = () => {
       <section className="flex flex-col gap-6 w-full my-8">
         <h1 className="font-bold text-xl">Edit Profile</h1>
 
-        {/* PROFILE ROW */}
-        <div className="flex items-center justify-between bg-gray-100 rounded-xl p-4">
-          <div className="flex items-center gap-3">
+        {/* PROFILE */}
+        <div className="flex justify-between items-center p-4 bg-gray-100 rounded-xl">
+          <div className="flex gap-3 items-center">
             <Avatar>
-              <AvatarImage src={input.profilePhotoPreview} alt="profile" />
+              <AvatarImage src={input.profilePhotoPreview} />
               <AvatarFallback>
                 {user?.username?.charAt(0)?.toUpperCase() || "U"}
               </AvatarFallback>
@@ -125,78 +114,70 @@ const EditProfile = () => {
 
             <div>
               <h1 className="font-bold text-sm">{user?.username}</h1>
-              <span className="text-gray-600 text-xs">
-                {input.bio || "Add a bio..."}
-              </span>
+              <span className="text-xs text-gray-600">{input.bio || "Add a bio..."}</span>
             </div>
           </div>
 
           <input
             ref={imageRef}
-            onChange={fileChangeHandler}
+            hidden
             type="file"
-            className="hidden"
             accept="image/*"
+            onChange={fileChangeHandler}
           />
 
           <Button
             onClick={() => imageRef.current.click()}
-            className="bg-[#0095F6] h-8 hover:bg-[#318bc7]"
+            className="bg-blue-500 hover:bg-blue-600 h-8"
           >
-            Change photo
+            Change Photo
           </Button>
         </div>
 
         {/* BIO */}
-        <div>
-          <h1 className="font-bold text-xl mb-2">Bio</h1>
-          <Textarea
-            value={input.bio}
-            onChange={(e) =>
-              setInput((prev) => ({ ...prev, bio: e.target.value }))
-            }
-            className="focus-visible:ring-transparent"
-            placeholder="Write something about yourself..."
-          />
-        </div>
+        <Textarea
+          value={input.bio}
+          placeholder="Write something about yourself..."
+          onChange={(e) =>
+            setInput((prev) => ({ ...prev, bio: e.target.value }))
+          }
+        />
 
         {/* GENDER */}
-        <div>
-          <h1 className="font-bold mb-2">Gender</h1>
-          <Select
-            value={input.gender}
-            onValueChange={(value) =>
-              setInput((prev) => ({ ...prev, gender: value }))
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select gender" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select
+          value={input.gender}
+          onValueChange={(value) =>
+            setInput((prev) => ({ ...prev, gender: value }))
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
 
-        {/* SUBMIT */}
+        {/* SAVE */}
         <div className="flex justify-end">
-          {loading ? (
-            <Button className="w-fit bg-[#0095F6] hover:bg-[#2a8ccd]">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Please wait
-            </Button>
-          ) : (
-            <Button
-              onClick={editProfileHandler}
-              className="w-fit bg-[#0095F6] hover:bg-[#2a8ccd]"
-            >
-              Submit
-            </Button>
-          )}
+          <Button
+            onClick={editProfileHandler}
+            disabled={loading}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Submit"
+            )}
+          </Button>
         </div>
       </section>
     </div>

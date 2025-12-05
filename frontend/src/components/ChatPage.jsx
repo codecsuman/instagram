@@ -18,27 +18,33 @@ const ChatPage = () => {
   const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
   const onlineUsers = useSelector((state) => state.socket.onlineUsers);
 
-  // Pass your socket instance (from App.jsx) to hook
-  const socket = window.socketRef?.current;
+  // ✅ SAFELY GET SOCKET FROM APP
+  const socket = window.socketRef || null;
+
   useGetRTM(socket);
 
-  // ------------------------------------------------
-  // SEND MESSAGE (socket + API)
-  // ------------------------------------------------
+  // ------------------------------------
+  // SEND MESSAGE
+  // ------------------------------------
   const sendMessageHandler = async (receiverId) => {
     if (!textMessage.trim()) return;
+
+    if (!socket) {
+      console.error("❌ Socket not connected");
+      return;
+    }
 
     try {
       const res = await api.post(`/message/send/${receiverId}`, {
         textMessage,
       });
 
-      if (res.data.success) {
-        // 1. Update my own chat instantly
+      if (res?.data?.success) {
+        // Instantly update my chat
         dispatch(addMessage(res.data.newMessage));
 
-        // 2. Emit message to receiver
-        socket?.emit("sendMessage", {
+        // Send to receiver
+        socket.emit("sendMessage", {
           receiverId,
           message: res.data.newMessage,
         });
@@ -46,7 +52,7 @@ const ChatPage = () => {
         setTextMessage("");
       }
     } catch (error) {
-      console.log("SEND ERR:", error);
+      console.error("SEND MESSAGE ERROR:", error?.response?.data || error);
     }
   };
 
@@ -72,8 +78,8 @@ const ChatPage = () => {
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
 
-                <div className="flex flex-col">
-                  <span className="font-medium">{u.username}</span>
+                <div>
+                  <span className="font-medium block">{u.username}</span>
                   <span
                     className={`text-xs font-bold ${
                       isOnline ? "text-green-600" : "text-red-600"
@@ -91,28 +97,24 @@ const ChatPage = () => {
       {/* RIGHT CHAT WINDOW */}
       {selectedChatUser ? (
         <section className="flex-1 border-l border-gray-300 flex flex-col h-full">
-          {/* TOP BAR */}
+          {/* HEADER */}
           <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 bg-white sticky top-0 z-10">
             <Avatar>
               <AvatarImage src={selectedChatUser.profilePicture} />
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
-
-            <div>
-              <span>{selectedChatUser.username}</span>
-            </div>
+            <span>{selectedChatUser.username}</span>
           </div>
 
           {/* MESSAGES */}
           <Messages selectedUser={selectedChatUser} />
 
-          {/* INPUT BAR */}
-          <div className="flex items-center p-4 border-t border-gray-300">
+          {/* INPUT */}
+          <div className="flex items-center p-4 border-t border-gray-200">
             <Input
               value={textMessage}
               onChange={(e) => setTextMessage(e.target.value)}
-              type="text"
-              className="flex-1 mr-2 focus-visible:ring-transparent"
+              className="flex-1 mr-2"
               placeholder="Message..."
             />
             <Button onClick={() => sendMessageHandler(selectedChatUser._id)}>
@@ -121,7 +123,6 @@ const ChatPage = () => {
           </div>
         </section>
       ) : (
-        /* EMPTY STATE */
         <div className="flex flex-col items-center justify-center mx-auto">
           <MessageCircleCode className="w-32 h-32 my-4" />
           <h1 className="font-medium">Your messages</h1>
