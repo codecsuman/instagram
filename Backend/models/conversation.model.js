@@ -7,17 +7,17 @@ const conversationSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
-      }
+      },
     ],
 
     messages: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Message",
-      }
+      },
     ],
 
-    // Optional but recommended for chat list UI
+    // Optional but recommended for chat UI
     lastMessage: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
@@ -28,19 +28,13 @@ const conversationSchema = new mongoose.Schema(
 );
 
 /* --------------------------------------------------
-   INDEXES (Correct & Optimized)
+   ✅ INDEXES (CLEAN & PRODUCTION READY)
 --------------------------------------------------- */
 
-// 1️⃣ Ensure one conversation per pair of participants (any order)
-conversationSchema.index(
-  { participants: 1 },
-  { unique: false }
-);
+// ✅ Efficient $all queries
+conversationSchema.index({ participants: 1 });
 
-// 2️⃣ Speed up $all queries
-conversationSchema.index({ participants: 1, participants: -1 });
-
-// 3️⃣ Query most recent chats faster
+// ✅ Faster chat list ordering
 conversationSchema.index({ updatedAt: -1 });
 
 export const Conversation = mongoose.model("Conversation", conversationSchema);

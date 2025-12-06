@@ -4,7 +4,7 @@ import { Message } from "../models/message.model.js";
 import { getReceiverSocketIds, io } from "../socket/socket.js";
 
 /* --------------------------------------------------------
-   SEND MESSAGE (REAL-TIME + DB)
+   SEND MESSAGE
 -------------------------------------------------------- */
 export const sendMessage = async (req, res) => {
   try {
@@ -19,9 +19,7 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    /* -----------------------------------------
-       FIND OR CREATE CONVERSATION
-    -------------------------------------------- */
+    // ✅ FIND OR CREATE CONVERSATION
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });
@@ -33,46 +31,36 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    /* -----------------------------------------
-       CREATE MESSAGE
-    -------------------------------------------- */
+    // ✅ CREATE MESSAGE WITH conversationId FIXED
     let newMessage = await Message.create({
+      conversationId: conversation._id,
       senderId,
       receiverId,
       message: textMessage,
     });
 
-    // populate sender info for frontend UI
+    // ✅ POPULATE SENDER DETAILS
     newMessage = await newMessage.populate(
       "senderId",
       "username profilePicture"
     );
 
-    /* -----------------------------------------
-       SAVE MESSAGE IN CONVERSATION
-    -------------------------------------------- */
+    // ✅ SAVE MESSAGE INTO CONVERSATION
     conversation.messages.push(newMessage._id);
     await conversation.save();
 
-    /* -----------------------------------------
-       SOCKET.IO EMIT (REAL-TIME)
-    -------------------------------------------- */
-
-    // 🔥 Send to receiver (all devices)
+    // ✅ SEND VIA SOCKET TO RECEIVER
     const receiverSockets = getReceiverSocketIds(receiverId);
     receiverSockets.forEach((sockId) => {
       io.to(sockId).emit("newMessage", newMessage);
     });
 
-    // 🔥 Also update sender screen instantly
+    // ✅ ALSO SEND TO SENDER (MULTI DEVICE SYNC)
     const senderSockets = getReceiverSocketIds(senderId);
     senderSockets.forEach((sockId) => {
       io.to(sockId).emit("newMessage", newMessage);
     });
 
-    /* -----------------------------------------
-       RESPONSE
-    -------------------------------------------- */
     return res.status(201).json({
       success: true,
       newMessage,
@@ -88,7 +76,7 @@ export const sendMessage = async (req, res) => {
 };
 
 /* --------------------------------------------------------
-   GET ALL MESSAGES BETWEEN TWO USERS
+   GET ALL MESSAGES
 -------------------------------------------------------- */
 export const getMessage = async (req, res) => {
   try {
@@ -99,7 +87,7 @@ export const getMessage = async (req, res) => {
       participants: { $all: [senderId, receiverId] },
     }).populate({
       path: "messages",
-      options: { sort: { createdAt: 1 } }, // oldest → newest
+      options: { sort: { createdAt: 1 } },
       populate: { path: "senderId", select: "username profilePicture" },
     });
 
