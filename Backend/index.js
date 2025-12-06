@@ -9,7 +9,7 @@ import connectDB from "./utils/db.js";
 // Load socket server (app + server exported)
 import { app, server } from "./socket/socket.js";
 
-// ✅ TRUST RENDER PROXY (REQUIRED FOR COOKIE ON HTTPS)
+// ✅ TRUST RENDER PROXY (COOKIE FIX)
 app.set("trust proxy", 1);
 
 // Routes
@@ -19,7 +19,7 @@ import messageRoute from "./routes/message.route.js";
 
 // ENV
 const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL;
 
 // ----------------------------
 // GLOBAL MIDDLEWARE
@@ -29,26 +29,28 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ----------------------------
-// ✅ FINAL CORS CONFIGURATION (RENDER + VERCEL FIX)
+// ✅ FIXED CORS CONFIGURATION (WORKING)
 // ----------------------------
 const allowedOrigins = [
   CLIENT_URL,
-  "http://localhost:5173",
-  "http://localhost:5173",
-  "http://localhost:5173",
+  "https://instagram-beta-sage.vercel.app",
+  "http://localhost:5173"
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Allow Postman, Render cron etc.
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      // Allow exact origin or subdomains
+      if (
+        allowedOrigins.some((allowed) => origin.startsWith(allowed))
+      ) {
         return callback(null, true);
       }
 
       console.error("❌ CORS BLOCKED:", origin);
-      return callback(new Error("Not allowed by CORS"));
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
