@@ -33,8 +33,8 @@ app.use(cookieParser());
 // ----------------------------
 const allowedOrigins = [
   CLIENT_URL,
-  "https://instagram-green-pi.vercel.app",
-  "https://instagram-git-main-codecsumans-projects.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5173",
   "http://localhost:5173",
 ];
 
