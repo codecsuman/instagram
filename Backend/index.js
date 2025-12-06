@@ -27,15 +27,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ------------------------------------------------
-// ✅ FIXED CORS (SAFE FOR BAD ENV VALUES)
+// ✅ FIXED CORS (LOCAL + PRODUCTION)
 // ------------------------------------------------
+const allowedOrigins = [
+  "http://localhost:5173",
+  CLIENT_URL
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || origin === CLIENT_URL) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, false); // block silently (no crash)
+        callback(new Error("CORS BLOCKED: " + origin));
       }
     },
     credentials: true,
@@ -56,5 +61,5 @@ app.use("/api/v1/message", messageRoute);
 server.listen(PORT, () => {
   connectDB();
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`✅ Allowed CORS Origin: ${CLIENT_URL}`);
+  console.log(`✅ Allowed CORS Origins:`, allowedOrigins);
 });

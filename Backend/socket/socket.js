@@ -12,14 +12,23 @@ export const app = express();
 export const server = http.createServer(app);
 
 // --------------------------------------------
+// CORS ORIGINS (LOCAL + PROD)
+// --------------------------------------------
+const allowedOrigins = [
+  "http://localhost:5173",
+  CLIENT_URL
+];
+
+// --------------------------------------------
 // SOCKET.IO CONFIG
 // --------------------------------------------
 export const io = new Server(server, {
   cors: {
-    origin: [CLIENT_URL],
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST"]
   },
-  transports: ["websocket", "polling"], // more stable
+  transports: ["websocket", "polling"],
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -27,7 +36,6 @@ export const io = new Server(server, {
 // --------------------------------------------
 // USER SOCKET MAPPING (supports MULTIPLE sockets)
 // --------------------------------------------
-// userId -> Set of socketIds
 const userSocketMap = {};
 
 export const getReceiverSocketIds = (userId) => {
@@ -46,7 +54,6 @@ io.on("connection", (socket) => {
     return;
   }
 
-  // Initialize SET if not exists
   if (!userSocketMap[userId]) {
     userSocketMap[userId] = new Set();
   }
@@ -55,33 +62,27 @@ io.on("connection", (socket) => {
 
   console.log(`✅ User connected: ${userId} | Socket: ${socket.id}`);
 
-  // Send updated online users list
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
 
   // -------------------------
   // REAL-TIME MESSAGE
   // -------------------------
   socket.on("sendMessage", ({ receiverId, message }) => {
     const receiverSockets = getReceiverSocketIds(receiverId);
-
     receiverSockets.forEach((sockId) => {
       io.to(sockId).emit("newMessage", message);
     });
   });
-
 
   // -------------------------
   // REAL-TIME NOTIFICATION
   // -------------------------
   socket.on("sendNotification", ({ receiverId, notification }) => {
     const receiverSockets = getReceiverSocketIds(receiverId);
-
     receiverSockets.forEach((sockId) => {
       io.to(sockId).emit("notification", notification);
     });
   });
-
 
   // -------------------------
   // DISCONNECT
@@ -89,14 +90,12 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     if (userSocketMap[userId]) {
       userSocketMap[userId].delete(socket.id);
-
       if (userSocketMap[userId].size === 0) {
         delete userSocketMap[userId];
       }
     }
 
     console.log(`❌ User disconnected: ${userId} | Socket: ${socket.id}`);
-
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
