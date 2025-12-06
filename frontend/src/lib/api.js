@@ -1,47 +1,58 @@
 import axios from "axios";
 
-// Base URL from environment (Render backend URL for prod, localhost for dev)
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// ✅ PROD + DEV BASE URL AUTO DETECT
+const API_URL =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
-// Axios instance
+// ✅ Axios instance
 const api = axios.create({
   baseURL: `${API_URL}/api/v1`,
-  withCredentials: true,
-  timeout: 10000,
+  withCredentials: true, // ✅ Send httpOnly cookies (REQUIRED)
+  timeout: 15000,
 });
 
 // --------------------------------------------
-// REQUEST INTERCEPTOR (ADD TOKEN SAFELY)
+// ✅ REQUEST INTERCEPTOR (JWT FALLBACK SUPPORT)
 // --------------------------------------------
-api.interceptors.request.use((config) => {
-  try {
-    const persisted = localStorage.getItem("persist:root");
-    if (!persisted) return config;
+api.interceptors.request.use(
+  (config) => {
+    try {
+      const persisted = localStorage.getItem("persist:root");
 
-    const parsed = JSON.parse(persisted);
-    const auth = parsed.auth ? JSON.parse(parsed.auth) : null;
+      if (persisted) {
+        const parsed = JSON.parse(persisted);
+        const auth = parsed?.auth ? JSON.parse(parsed.auth) : null;
 
-    if (auth?.token) {
-      config.headers.Authorization = `Bearer ${auth.token}`;
+        // ✅ Support header-based auth fallback
+        if (auth?.token) {
+          config.headers.Authorization = `Bearer ${auth.token}`;
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ Invalid Redux Persist Data");
     }
-  } catch (error) {
-    console.warn("⚠️ Invalid redux persist data");
-  }
 
-  return config;
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // --------------------------------------------
-// RESPONSE INTERCEPTOR (AUTO LOGOUT ON 401)
+// ✅ RESPONSE INTERCEPTOR (SESSION EXPIRED FIX)
 // --------------------------------------------
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    const status = error?.response?.status;
+
+    // ✅ ONLY logout when session truly expired
+    if (status === 401 || status === 403) {
       localStorage.removeItem("persist:root");
       localStorage.removeItem("token");
 
-      window.location.href = "/login";
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login");
+      }
     }
 
     return Promise.reject(error);

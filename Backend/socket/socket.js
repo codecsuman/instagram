@@ -11,25 +11,27 @@ export const app = express();
 export const server = http.createServer(app);
 
 // --------------------------------------------
-// SOCKET.IO CONFIG
+// ✅ SOCKET.IO CONFIG (RENDER + VERCEL SAFE)
 // --------------------------------------------
 export const io = new Server(server, {
   cors: {
     origin: CLIENT_URL,
+    methods: ["GET", "POST"],
     credentials: true,
   },
-  transports: ["websocket"],   // Best for Render
+  transports: ["websocket"],   // Required for Render
   pingTimeout: 60000,
   pingInterval: 25000,
+  allowEIO3: true,             // ✅ Fix handshake issues
 });
 
 // --------------------------------------------
 // USER SOCKET MAP
 // --------------------------------------------
-const userSocketMap = new Map(); // safer than plain object
+const userSocketMap = new Map();
 
 export const getReceiverSocketIds = (userId) => {
-  return userSocketMap.get(userId) || new Set();
+  return userSocketMap.get(userId) || [];
 };
 
 // --------------------------------------------
@@ -40,48 +42,52 @@ io.on("connection", (socket) => {
     const userId = socket.handshake.query?.userId;
 
     if (!userId) {
-      console.log("❌ Socket connection rejected: No userId");
-      socket.disconnect();
+      console.log("❌ Socket rejected: Missing userId");
+      socket.disconnect(true);
       return;
     }
 
-    // Add socket under user
+    // ----------------------------
+    // REGISTER SOCKET TO USER
+    // ----------------------------
     if (!userSocketMap.has(userId)) {
       userSocketMap.set(userId, new Set());
     }
 
     userSocketMap.get(userId).add(socket.id);
 
-    console.log(`✅ User connected: ${userId}, Socket: ${socket.id}`);
+    console.log(`✅ Socket connected → User: ${userId} | Socket: ${socket.id}`);
 
-    // Emit online users list
+    // Send fresh online list
     io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
 
-    // -------------------------
+    // ----------------------------
     // MESSAGE DELIVERY
-    // -------------------------
+    // ----------------------------
     socket.on("sendMessage", ({ receiverId, message }) => {
-      const receiverSockets = getReceiverSocketIds(receiverId);
+      if (!receiverId || !message) return;
 
+      const receiverSockets = getReceiverSocketIds(receiverId);
       receiverSockets.forEach((sockId) => {
         io.to(sockId).emit("newMessage", message);
       });
     });
 
-    // -------------------------
+    // ----------------------------
     // NOTIFICATIONS
-    // -------------------------
+    // ----------------------------
     socket.on("sendNotification", ({ receiverId, notification }) => {
-      const receiverSockets = getReceiverSocketIds(receiverId);
+      if (!receiverId || !notification) return;
 
+      const receiverSockets = getReceiverSocketIds(receiverId);
       receiverSockets.forEach((sockId) => {
         io.to(sockId).emit("notification", notification);
       });
     });
 
-    // -------------------------
+    // ----------------------------
     // CLEANUP ON DISCONNECT
-    // -------------------------
+    // ----------------------------
     socket.on("disconnect", () => {
       if (userSocketMap.has(userId)) {
         userSocketMap.get(userId).delete(socket.id);
@@ -91,13 +97,13 @@ io.on("connection", (socket) => {
         }
       }
 
-      console.log(`❌ User disconnected: ${userId}, Socket: ${socket.id}`);
+      console.log(`❌ Socket disconnected → User: ${userId} | Socket: ${socket.id}`);
 
       io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
     });
 
   } catch (err) {
     console.error("❌ Socket error:", err.message);
-    socket.disconnect();
+    socket.disconnect(true);
   }
 });

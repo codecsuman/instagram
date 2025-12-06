@@ -10,6 +10,9 @@ import connectDB from "./utils/db.js";
 // Load socket server (app + server exported)
 import { app, server } from "./socket/socket.js";
 
+// ✅ TRUST RENDER PROXY (IMPORTANT FOR COOKIE)
+app.set("trust proxy", 1);
+
 // Routes
 import userRoute from "./routes/user.route.js";
 import postRoute from "./routes/post.route.js";
@@ -27,11 +30,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ----------------------------
-// ✅ CORS — FINAL PRODUCTION FIX
+// ✅ CORS — FINAL PRODUCTION FIX (COOKIE SAFE)
 // ----------------------------
 const allowedOrigins = [
-  CLIENT_URL,             // ✅ Vercel frontend
-  "http://localhost:5173" // ✅ local dev
+  CLIENT_URL,
+  "http://localhost:5173"
 ];
 
 app.use(
@@ -39,10 +42,11 @@ app.use(
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"), false);
+      return callback(null, false); // ✅ no crash
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
