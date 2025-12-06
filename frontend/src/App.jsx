@@ -15,11 +15,8 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setOnlineUsers,
-  setSocket,
   setSocketConnected,
   setSocketId,
-  resetReconnectAttempts,
-  incrementReconnectAttempts,
   clearOnlineUsers,
 } from "./redux/socketSlice";
 import { setLikeNotification } from "./redux/rtnSlice";
@@ -57,8 +54,8 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    // If user logs out → reset socket state
     if (!user?._id) {
-      // 🔥 cleanup redux socket state on logout
       dispatch(clearOnlineUsers());
       return;
     }
@@ -71,39 +68,34 @@ function App() {
       reconnectionAttempts: 10,
     });
 
-    // ✅ STORE SOCKET INSTANCE
-    dispatch(setSocket(socket));
-
-    // ✅ CONNECTION STATUS
+    // -----------------------------
+    // SOCKET EVENTS
+    // -----------------------------
     socket.on("connect", () => {
+      console.log("✅ Socket Connected:", socket.id);
       dispatch(setSocketConnected(true));
       dispatch(setSocketId(socket.id));
-      dispatch(resetReconnectAttempts());
     });
 
     socket.on("disconnect", () => {
+      console.log("❌ Socket Disconnected");
       dispatch(setSocketConnected(false));
     });
 
-    socket.on("reconnect_attempt", () => {
-      dispatch(incrementReconnectAttempts());
-    });
-
-    // ✅ Online users
     socket.on("getOnlineUsers", (users) => {
       dispatch(setOnlineUsers(users));
     });
 
-    // ✅ Real-time notifications
     socket.on("notification", (noti) => {
       dispatch(setLikeNotification(noti));
     });
 
-    // ✅ CLEANUP
+    // -----------------------------
+    // CLEANUP ON UNMOUNT / LOGOUT
+    // -----------------------------
     return () => {
       socket.disconnect();
       dispatch(clearOnlineUsers());
-      dispatch(setSocket(null));
     };
   }, [user, dispatch]);
 

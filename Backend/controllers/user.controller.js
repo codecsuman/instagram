@@ -5,13 +5,15 @@ import getDataUri from "../utils/datauri.js";
 import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 
-/* -------------------- COOKIE SETTINGS (FIXED) -------------------- */
+/* -------------------- COOKIE SETTINGS (AUTO MODE) -------------------- */
+const isProduction = process.env.NODE_ENV === "production";
+
 const cookieOptions = {
   httpOnly: true,
-  secure: true,        // ✅ REQUIRED for Render HTTPS
-  sameSite: "none",    // ✅ REQUIRED for cross-site cookies (Vercel <-> Render)
+  secure: isProduction,           // true only on Render
+  sameSite: isProduction ? "none" : "lax",  // production vs localhost
   path: "/",
-  maxAge: 24 * 60 * 60 * 1000, // 1 day
+  maxAge: 24 * 60 * 60 * 1000,
 };
 
 /* ------------------------ REGISTER ------------------------ */
@@ -68,7 +70,6 @@ export const login = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Email and password required" });
 
-    // IMPORTANT: Because password is `select:false` in schema
     let user = await User.findOne({ email }).select("+password");
 
     if (!user)
@@ -82,14 +83,12 @@ export const login = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Incorrect email or password" });
 
-    // Create token
     const token = jwt.sign(
       { userId: user._id },
       process.env.SECRET_KEY,
       { expiresIn: "1d" }
     );
 
-    // Fetch user's posts
     const userPosts = await Post.find({ author: user._id }).sort({
       createdAt: -1,
     });
@@ -108,7 +107,7 @@ export const login = async (req, res) => {
     };
 
     return res
-      .cookie("token", token, cookieOptions)   // ✅ FIXED COOKIE CONFIG
+      .cookie("token", token, cookieOptions)
       .status(200)
       .json({
         success: true,
@@ -260,7 +259,6 @@ export const followOrUnfollow = async (req, res) => {
       targetUser.followers.pull(followerId);
       await user.save();
       await targetUser.save();
-
       return res.status(200).json({
         success: true,
         message: "Unfollowed successfully",

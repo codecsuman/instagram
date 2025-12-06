@@ -12,11 +12,12 @@ export const app = express();
 export const server = http.createServer(app);
 
 // --------------------------------------------
-// CORS ORIGINS (LOCAL + PROD)
+// ✅ ALLOWED SOCKET ORIGINS
 // --------------------------------------------
 const allowedOrigins = [
   "http://localhost:5173",
-  CLIENT_URL
+  "https://instagram-beta-sage.vercel.app",
+  CLIENT_URL,
 ];
 
 // --------------------------------------------
@@ -26,7 +27,7 @@ export const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     credentials: true,
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST"],
   },
   transports: ["websocket", "polling"],
   pingTimeout: 60000,
@@ -34,7 +35,7 @@ export const io = new Server(server, {
 });
 
 // --------------------------------------------
-// USER SOCKET MAPPING (supports MULTIPLE sockets)
+// USER SOCKET MAPPING
 // --------------------------------------------
 const userSocketMap = {};
 
@@ -49,7 +50,7 @@ io.on("connection", (socket) => {
   const userId = socket.handshake.query?.userId;
 
   if (!userId) {
-    console.log("❌ No userId found in handshake");
+    console.log("❌ No userId found in socket handshake");
     socket.disconnect();
     return;
   }
@@ -64,35 +65,28 @@ io.on("connection", (socket) => {
 
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-  // -------------------------
   // REAL-TIME MESSAGE
-  // -------------------------
   socket.on("sendMessage", ({ receiverId, message }) => {
     const receiverSockets = getReceiverSocketIds(receiverId);
-    receiverSockets.forEach((sockId) => {
-      io.to(sockId).emit("newMessage", message);
+    receiverSockets.forEach((id) => {
+      io.to(id).emit("newMessage", message);
     });
   });
 
-  // -------------------------
   // REAL-TIME NOTIFICATION
-  // -------------------------
   socket.on("sendNotification", ({ receiverId, notification }) => {
     const receiverSockets = getReceiverSocketIds(receiverId);
-    receiverSockets.forEach((sockId) => {
-      io.to(sockId).emit("notification", notification);
+    receiverSockets.forEach((id) => {
+      io.to(id).emit("notification", notification);
     });
   });
 
-  // -------------------------
   // DISCONNECT
-  // -------------------------
   socket.on("disconnect", () => {
-    if (userSocketMap[userId]) {
-      userSocketMap[userId].delete(socket.id);
-      if (userSocketMap[userId].size === 0) {
-        delete userSocketMap[userId];
-      }
+    userSocketMap[userId]?.delete(socket.id);
+
+    if (userSocketMap[userId]?.size === 0) {
+      delete userSocketMap[userId];
     }
 
     console.log(`❌ User disconnected: ${userId} | Socket: ${socket.id}`);

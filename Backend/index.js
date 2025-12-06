@@ -1,4 +1,3 @@
-// index.js
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -27,11 +26,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ------------------------------------------------
-// ✅ FIXED CORS (LOCAL + PRODUCTION)
+// ✅ SAFE CORS (LOCAL + PRODUCTION)
 // ------------------------------------------------
 const allowedOrigins = [
   "http://localhost:5173",
-  CLIENT_URL
+  "https://instagram-beta-sage.vercel.app",
+  CLIENT_URL,
 ];
 
 app.use(
@@ -40,7 +40,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("CORS BLOCKED: " + origin));
+        callback(null, false);   // silently block
       }
     },
     credentials: true,
@@ -61,5 +61,5 @@ app.use("/api/v1/message", messageRoute);
 server.listen(PORT, () => {
   connectDB();
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`✅ Allowed CORS Origins:`, allowedOrigins);
+  console.log("✅ Allowed CORS Origins:", allowedOrigins);
 });
