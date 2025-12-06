@@ -1,10 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  user: null,                   
-  suggestedUsers: [],         
-  userProfile: null,           
-  selectedUserForProfile: null,
+  user: null,                // Logged-in user
+  suggestedUsers: [],        // List of suggestions
+  userProfile: null,         // Profile being viewed
+  selectedUserForProfile: null, // Avoids conflict with chat slice
 };
 
 const authSlice = createSlice({
@@ -16,11 +16,11 @@ const authSlice = createSlice({
     // SET AUTH USER
     // -----------------------------------
     setAuthUser: (state, action) => {
-      state.user = action.payload || null;
+      state.user = action.payload || null; // always safe
     },
 
     // -----------------------------------
-    // LOGOUT USER (COMPLETE RESET)
+    // LOGOUT USER (complete reset)
     // -----------------------------------
     logoutUser: (state) => {
       state.user = null;
@@ -39,14 +39,14 @@ const authSlice = createSlice({
     },
 
     // -----------------------------------
-    // PROFILE BEING VIEWED
+    // VIEWED PROFILE DATA
     // -----------------------------------
     setUserProfile: (state, action) => {
       state.userProfile = action.payload || null;
     },
 
     // -----------------------------------
-    // PROFILE SELECTOR
+    // SELECT PROFILE USER
     // -----------------------------------
     setSelectedUser: (state, action) => {
       state.selectedUserForProfile = action.payload || null;
@@ -59,7 +59,7 @@ export const {
   logoutUser,
   setSuggestedUsers,
   setUserProfile,
-  setSelectedUser
+  setSelectedUser,
 } = authSlice.actions;
 
 export default authSlice.reducer;

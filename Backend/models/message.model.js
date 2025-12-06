@@ -6,7 +6,6 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",
       required: true,
-      index: true,
     },
 
     senderId: {
@@ -25,7 +24,6 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 2000,
     },
 
     seen: {
@@ -36,10 +34,20 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes
+/* -------------------------------------------------
+   INDEXES FOR MAXIMUM SPEED
+--------------------------------------------------- */
+
+// Faster DM lookups
 messageSchema.index({ conversationId: 1 });
+
+// Faster sender → receiver message lists
 messageSchema.index({ senderId: 1, receiverId: 1 });
+
+// Fast unseen message queries
 messageSchema.index({ receiverId: 1, seen: 1 });
+
+// Sort latest messages fast
 messageSchema.index({ createdAt: -1 });
 
 export const Message = mongoose.model("Message", messageSchema);

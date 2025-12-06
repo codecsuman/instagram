@@ -1,3 +1,4 @@
+// socket.js
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -5,105 +6,97 @@ import { Server } from "socket.io";
 import express from "express";
 import http from "http";
 
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL || "https://instagram-beta-sage.vercel.app";
 
 export const app = express();
 export const server = http.createServer(app);
 
 // --------------------------------------------
-// ✅ SOCKET.IO CONFIG (RENDER + VERCEL SAFE)
+// SOCKET.IO CONFIG
 // --------------------------------------------
 export const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
-    methods: ["GET", "POST"],
+    origin: [CLIENT_URL],
     credentials: true,
   },
-  transports: ["websocket"],   // Required for Render
+  transports: ["websocket", "polling"], // more stable
   pingTimeout: 60000,
   pingInterval: 25000,
-  allowEIO3: true,             // ✅ Fix handshake issues
 });
 
 // --------------------------------------------
-// USER SOCKET MAP
+// USER SOCKET MAPPING (supports MULTIPLE sockets)
 // --------------------------------------------
-const userSocketMap = new Map();
+// userId -> Set of socketIds
+const userSocketMap = {};
 
 export const getReceiverSocketIds = (userId) => {
-  return userSocketMap.get(userId) || [];
+  return userSocketMap[userId] || new Set();
 };
 
 // --------------------------------------------
-// SOCKET EVENTS
+// MAIN SOCKET EVENTS
 // --------------------------------------------
 io.on("connection", (socket) => {
-  try {
-    const userId = socket.handshake.query?.userId;
+  const userId = socket.handshake.query?.userId;
 
-    if (!userId) {
-      console.log("❌ Socket rejected: Missing userId");
-      socket.disconnect(true);
-      return;
-    }
-
-    // ----------------------------
-    // REGISTER SOCKET TO USER
-    // ----------------------------
-    if (!userSocketMap.has(userId)) {
-      userSocketMap.set(userId, new Set());
-    }
-
-    userSocketMap.get(userId).add(socket.id);
-
-    console.log(`✅ Socket connected → User: ${userId} | Socket: ${socket.id}`);
-
-    // Send fresh online list
-    io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
-
-    // ----------------------------
-    // MESSAGE DELIVERY
-    // ----------------------------
-    socket.on("sendMessage", ({ receiverId, message }) => {
-      if (!receiverId || !message) return;
-
-      const receiverSockets = getReceiverSocketIds(receiverId);
-      receiverSockets.forEach((sockId) => {
-        io.to(sockId).emit("newMessage", message);
-      });
-    });
-
-    // ----------------------------
-    // NOTIFICATIONS
-    // ----------------------------
-    socket.on("sendNotification", ({ receiverId, notification }) => {
-      if (!receiverId || !notification) return;
-
-      const receiverSockets = getReceiverSocketIds(receiverId);
-      receiverSockets.forEach((sockId) => {
-        io.to(sockId).emit("notification", notification);
-      });
-    });
-
-    // ----------------------------
-    // CLEANUP ON DISCONNECT
-    // ----------------------------
-    socket.on("disconnect", () => {
-      if (userSocketMap.has(userId)) {
-        userSocketMap.get(userId).delete(socket.id);
-
-        if (userSocketMap.get(userId).size === 0) {
-          userSocketMap.delete(userId);
-        }
-      }
-
-      console.log(`❌ Socket disconnected → User: ${userId} | Socket: ${socket.id}`);
-
-      io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
-    });
-
-  } catch (err) {
-    console.error("❌ Socket error:", err.message);
-    socket.disconnect(true);
+  if (!userId) {
+    console.log("❌ No userId found in handshake");
+    socket.disconnect();
+    return;
   }
+
+  // Initialize SET if not exists
+  if (!userSocketMap[userId]) {
+    userSocketMap[userId] = new Set();
+  }
+
+  userSocketMap[userId].add(socket.id);
+
+  console.log(`✅ User connected: ${userId} | Socket: ${socket.id}`);
+
+  // Send updated online users list
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+
+  // -------------------------
+  // REAL-TIME MESSAGE
+  // -------------------------
+  socket.on("sendMessage", ({ receiverId, message }) => {
+    const receiverSockets = getReceiverSocketIds(receiverId);
+
+    receiverSockets.forEach((sockId) => {
+      io.to(sockId).emit("newMessage", message);
+    });
+  });
+
+
+  // -------------------------
+  // REAL-TIME NOTIFICATION
+  // -------------------------
+  socket.on("sendNotification", ({ receiverId, notification }) => {
+    const receiverSockets = getReceiverSocketIds(receiverId);
+
+    receiverSockets.forEach((sockId) => {
+      io.to(sockId).emit("notification", notification);
+    });
+  });
+
+
+  // -------------------------
+  // DISCONNECT
+  // -------------------------
+  socket.on("disconnect", () => {
+    if (userSocketMap[userId]) {
+      userSocketMap[userId].delete(socket.id);
+
+      if (userSocketMap[userId].size === 0) {
+        delete userSocketMap[userId];
+      }
+    }
+
+    console.log(`❌ User disconnected: ${userId} | Socket: ${socket.id}`);
+
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
 });

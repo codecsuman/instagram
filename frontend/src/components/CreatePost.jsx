@@ -1,10 +1,5 @@
 import React, { useRef, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "./ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
@@ -16,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPosts } from "@/redux/postSlice";
 
 const CreatePost = ({ open, setOpen }) => {
-  const imageRef = useRef(null);
+  const imageRef = useRef();
   const dispatch = useDispatch();
 
   const [file, setFile] = useState(null);
@@ -28,20 +23,20 @@ const CreatePost = ({ open, setOpen }) => {
   const { posts } = useSelector((state) => state.post);
 
   // ---------------------------------------
-  // FILE SELECT
+  // FILE CHANGE
   // ---------------------------------------
   const fileChangeHandler = async (e) => {
     const uploadedFile = e.target.files?.[0];
     if (!uploadedFile) return;
 
     if (!uploadedFile.type.startsWith("image/")) {
-      toast.error("Only image files allowed");
+      toast.error("Only image files are allowed");
       return;
     }
 
     setFile(uploadedFile);
-    const preview = await readFileAsDataURL(uploadedFile);
-    setImagePreview(preview);
+    const dataUrl = await readFileAsDataURL(uploadedFile);
+    setImagePreview(dataUrl);
   };
 
   // ---------------------------------------
@@ -49,7 +44,11 @@ const CreatePost = ({ open, setOpen }) => {
   // ---------------------------------------
   const createPostHandler = async (e) => {
     e.preventDefault();
-    if (!file) return toast.error("Please select an image");
+
+    if (!file) {
+      toast.error("Please select an image");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("caption", caption);
@@ -62,26 +61,31 @@ const CreatePost = ({ open, setOpen }) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (res?.data?.success) {
+      if (res.data.success) {
         const newPost = res.data.post;
+
+        // 🔥 FIX — update FEED correctly
         dispatch(setPosts([newPost, ...posts]));
 
-        toast.success("Post created!");
+        toast.success("Post created successfully");
+
+        // cleanup
         setCaption("");
         setImagePreview("");
         setFile(null);
+
         setOpen(false);
       }
     } catch (error) {
-      console.error("Post upload failed:", error?.response?.data || error);
-      toast.error("Upload failed");
+      console.log(error);
+      toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   // ---------------------------------------
-  // CLEANUP ON DIALOG CLOSE
+  // DIALOG CLOSE CLEANUP
   // ---------------------------------------
   const handleDialogChange = (isOpen) => {
     if (!isOpen) {
@@ -95,25 +99,22 @@ const CreatePost = ({ open, setOpen }) => {
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent>
-        {/* ✅ ACCESSIBILITY FIX */}
-        <DialogTitle className="hidden">Create Post Dialog</DialogTitle>
-
         <DialogHeader className="text-center font-semibold">
           Create New Post
         </DialogHeader>
 
-        {/* USER */}
+        {/* USER INFO */}
         <div className="flex gap-3 items-center">
           <Avatar>
-            <AvatarImage src={user?.profilePicture} />
+            <AvatarImage src={user?.profilePicture} alt="img" />
             <AvatarFallback>
               {user?.username?.charAt(0)?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
 
           <div>
-            <h1 className="text-xs font-semibold">{user?.username}</h1>
-            <span className="text-xs text-gray-600">Post something...</span>
+            <h1 className="font-semibold text-xs">{user?.username}</h1>
+            <span className="text-gray-600 text-xs">Post something...</span>
           </div>
         </div>
 
@@ -121,43 +122,43 @@ const CreatePost = ({ open, setOpen }) => {
         <Textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
+          className="focus-visible:ring-transparent border-none"
           placeholder="Write a caption..."
-          className="border-none focus-visible:ring-transparent"
         />
 
         {/* IMAGE PREVIEW */}
         {imagePreview && (
-          <div className="h-64 flex justify-center">
+          <div className="w-full h-64 flex items-center justify-center">
             <img
               src={imagePreview}
               alt="preview"
-              className="object-cover w-full rounded-md"
+              className="object-cover h-full w-full rounded-md"
             />
           </div>
         )}
 
-        {/* FILE INPUT */}
+        {/* FILE SELECT */}
         <input
           ref={imageRef}
           type="file"
           accept="image/*"
           onChange={fileChangeHandler}
-          hidden
+          className="hidden"
         />
 
         <Button
-          type="button"
-          onClick={() => imageRef.current?.click()}
-          className="mx-auto bg-blue-500 hover:bg-blue-600"
+          onClick={() => imageRef.current.click()}
+          className="w-fit mx-auto bg-[#0095F6] hover:bg-[#258bcf]"
         >
           Select from computer
         </Button>
 
-        {/* SUBMIT */}
+        {/* POST BUTTON */}
         {imagePreview &&
           (loading ? (
             <Button className="w-full">
-              <Loader2 className="animate-spin mr-2" /> Uploading...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Please wait
             </Button>
           ) : (
             <Button onClick={createPostHandler} className="w-full">

@@ -4,67 +4,64 @@ const rtnSlice = createSlice({
   name: "realTimeNotification",
 
   initialState: {
-    notifications: [],
-    unreadCount: 0,
+    notifications: [],   // all notifications
+    unreadCount: 0,      // unread badge
   },
 
   reducers: {
     // ---------------------------------------------------
-    // HANDLE ALL SOCKET NOTIFICATIONS
+    // HANDLE ALL SOCKET NOTIFICATION TYPES
     // ---------------------------------------------------
     setLikeNotification: (state, action) => {
       const noti = action.payload;
-      if (!noti || !noti.type) return;
+      if (!noti) return;
 
+      // Unique key ensures no duplicates
       const uniqueKey = `${noti.type}-${noti.userId}-${noti.postId}`;
 
-      const exists = state.notifications.some(
+      const alreadyExist = state.notifications.some(
         (item) => item.uniqueKey === uniqueKey
       );
 
       // ---------------------------------------------------
-      // ADD NOTIFICATIONS
+      // ADD NOTIFICATIONS (like/comment)
       // ---------------------------------------------------
       if (["like", "comment"].includes(noti.type)) {
-        if (!exists) {
+        if (!alreadyExist) {
           state.notifications.unshift({
             ...noti,
             uniqueKey,
             createdAt: Date.now(),
           });
-
-          state.unreadCount = Math.max(state.unreadCount + 1, 0);
+          state.unreadCount += 1;
         }
       }
 
       // ---------------------------------------------------
-      // REMOVE NOTIFICATIONS
+      // REMOVE NOTIFICATIONS (dislike/comment_removed)
       // ---------------------------------------------------
       if (["dislike", "comment_removed"].includes(noti.type)) {
         const before = state.notifications.length;
 
         state.notifications = state.notifications.filter(
-          (n) => n.uniqueKey !== uniqueKey
+          (i) => i.uniqueKey !== uniqueKey
         );
 
         const after = state.notifications.length;
 
-        if (after < before) {
-          state.unreadCount = Math.max(state.unreadCount - 1, 0);
+        // reduce unread count safely
+        if (after < before && state.unreadCount > 0) {
+          state.unreadCount -= 1;
         }
       }
     },
 
-    // ---------------------------------------------------
-    // MARK ALL AS READ
-    // ---------------------------------------------------
+    // Mark all notifications as read
     markAllRead: (state) => {
       state.unreadCount = 0;
     },
 
-    // ---------------------------------------------------
-    // CLEAR ALL NOTIFICATIONS
-    // ---------------------------------------------------
+    // Clear all notifications
     clearNotifications: (state) => {
       state.notifications = [];
       state.unreadCount = 0;

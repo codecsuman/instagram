@@ -1,3 +1,5 @@
+// src/hooks/useGetAllMessage.js
+
 import { setMessages, setLoading, setError } from "@/redux/chatSlice";
 import api from "@/lib/api";
 import { useEffect } from "react";
@@ -14,8 +16,8 @@ const useGetAllMessage = () => {
       return;
     }
 
+    let isCancelled = false; // avoids updating state after unmount
     const userId = selectedChatUser._id;
-    let isCancelled = false;
 
     const fetchAllMessage = async () => {
       try {
@@ -23,17 +25,14 @@ const useGetAllMessage = () => {
 
         const res = await api.get(`/message/all/${userId}`);
 
-        if (!isCancelled && res?.data?.success) {
-          dispatch(setMessages(res.data.messages));
+        if (!isCancelled) {
+          if (res.data.success) {
+            dispatch(setMessages(res.data.messages));
+          }
         }
-
       } catch (error) {
         if (!isCancelled) {
-          dispatch(
-            setError(
-              error?.response?.data?.message || "Failed to load messages"
-            )
-          );
+          dispatch(setError(error?.response?.data?.message || "Failed to fetch messages"));
         }
       } finally {
         if (!isCancelled) {
@@ -44,6 +43,7 @@ const useGetAllMessage = () => {
 
     fetchAllMessage();
 
+    // Cleanup for fast user switching
     return () => {
       isCancelled = true;
     };

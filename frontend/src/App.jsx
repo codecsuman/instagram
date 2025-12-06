@@ -13,14 +13,22 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
-import { setOnlineUsers } from "./redux/socketSlice";
+import {
+  setOnlineUsers,
+  setSocket,
+  setSocketConnected,
+  setSocketId,
+  resetReconnectAttempts,
+  incrementReconnectAttempts,
+  clearOnlineUsers,
+} from "./redux/socketSlice";
 import { setLikeNotification } from "./redux/rtnSlice";
 
 // Socket.io
 import { io } from "socket.io-client";
 
 // --------------------------------------------
-// ROUTER
+// ROUTES
 // --------------------------------------------
 const router = createBrowserRouter([
   {
@@ -31,27 +39,29 @@ const router = createBrowserRouter([
       </ProtectedRoutes>
     ),
     children: [
-      { index: true, element: <Home /> },
-      { path: "profile/:id", element: <Profile /> },
-      { path: "account/edit", element: <EditProfile /> },
-      { path: "chat", element: <ChatPage /> },
+      { path: "/", element: <Home /> },
+      { path: "/profile/:id", element: <Profile /> },
+      { path: "/account/edit", element: <EditProfile /> },
+      { path: "/chat", element: <ChatPage /> },
     ],
   },
-
-  // Public routes
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
 ]);
 
 // --------------------------------------------
-// MAIN APP COMPONENT
+// MAIN APP
 // --------------------------------------------
 function App() {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?._id) {
+      // 🔥 cleanup redux socket state on logout
+      dispatch(clearOnlineUsers());
+      return;
+    }
 
     const socket = io(import.meta.env.VITE_API_URL, {
       query: { userId: user._id },
@@ -61,29 +71,39 @@ function App() {
       reconnectionAttempts: 10,
     });
 
-    // ✅ MAKE SOCKET GLOBAL
-    window._socket = socket;
+    // ✅ STORE SOCKET INSTANCE
+    dispatch(setSocket(socket));
 
+    // ✅ CONNECTION STATUS
     socket.on("connect", () => {
-      console.log("✅ Socket Connected:", socket.id);
+      dispatch(setSocketConnected(true));
+      dispatch(setSocketId(socket.id));
+      dispatch(resetReconnectAttempts());
     });
 
+    socket.on("disconnect", () => {
+      dispatch(setSocketConnected(false));
+    });
+
+    socket.on("reconnect_attempt", () => {
+      dispatch(incrementReconnectAttempts());
+    });
+
+    // ✅ Online users
     socket.on("getOnlineUsers", (users) => {
       dispatch(setOnlineUsers(users));
     });
 
+    // ✅ Real-time notifications
     socket.on("notification", (noti) => {
       dispatch(setLikeNotification(noti));
     });
 
-    socket.on("disconnect", () => {
-      console.log("❌ Socket Disconnected");
-    });
-
-    // CLEANUP
+    // ✅ CLEANUP
     return () => {
       socket.disconnect();
-      window._socket = null;
+      dispatch(clearOnlineUsers());
+      dispatch(setSocket(null));
     };
   }, [user, dispatch]);
 

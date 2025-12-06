@@ -11,7 +11,7 @@ const Signup = () => {
   const [input, setInput] = useState({
     username: "",
     email: "",
-    password: "",
+    password: ""
   });
 
   const [loading, setLoading] = useState(false);
@@ -19,28 +19,27 @@ const Signup = () => {
   const navigate = useNavigate();
   const { user } = useSelector((store) => store.auth);
 
-  // Redirect if already logged in
+  // Redirect if logged in
   useEffect(() => {
-    if (user?._id) navigate("/", { replace: true });
+    if (user) navigate("/");
   }, [user, navigate]);
 
   const changeEventHandler = (e) => {
-    setInput((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setInput({ ...input, [e.target.name]: e.target.value });
   };
 
-  // ---------------- VALIDATION ----------------
+  // ---------------------------
+  // FORM VALIDATION
+  // ---------------------------
   const validateData = () => {
     if (!input.username.trim() || input.username.length < 3) {
-      toast.error("Username must be at least 3 characters");
+      toast.error("Username must be at least 3 characters long");
       return false;
     }
 
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(input.email)) {
-      toast.error("Invalid email address");
+      toast.error("Please enter a valid email address");
       return false;
     }
 
@@ -52,9 +51,12 @@ const Signup = () => {
     return true;
   };
 
-  // ---------------- SIGNUP ----------------
+  // ---------------------------
+  // SIGNUP HANDLER
+  // ---------------------------
   const signupHandler = async (e) => {
     e.preventDefault();
+
     if (!validateData()) return;
 
     try {
@@ -71,16 +73,17 @@ const Signup = () => {
 
       setInput({ username: "", email: "", password: "" });
 
-      navigate("/login"); // ✅ Correct line
+      // ✅ FIX HERE (removed space)
+      navigate("/login");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Signup failed");
+      toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center w-screen h-screen">
       <form
         onSubmit={signupHandler}
         className="shadow-lg flex flex-col gap-5 p-8 w-[350px]"
@@ -95,10 +98,11 @@ const Signup = () => {
         <div>
           <span className="font-medium">Username</span>
           <Input
+            type="text"
             name="username"
             value={input.username}
             onChange={changeEventHandler}
-            className="my-2"
+            className="focus-visible:ring-transparent my-2"
           />
         </div>
 
@@ -109,7 +113,7 @@ const Signup = () => {
             name="email"
             value={input.email}
             onChange={changeEventHandler}
-            className="my-2"
+            className="focus-visible:ring-transparent my-2"
           />
         </div>
 
@@ -120,22 +124,23 @@ const Signup = () => {
             name="password"
             value={input.password}
             onChange={changeEventHandler}
-            className="my-2"
+            className="focus-visible:ring-transparent my-2"
           />
         </div>
 
-        <Button
-          type="submit"
-          disabled={loading || !input.username || !input.email || !input.password}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 animate-spin" /> Please wait
-            </>
-          ) : (
-            "Signup"
-          )}
-        </Button>
+        {loading ? (
+          <Button disabled>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Please wait
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={!input.username || !input.email || !input.password}
+          >
+            Signup
+          </Button>
+        )}
 
         <span className="text-center text-sm">
           Already have an account?{" "}

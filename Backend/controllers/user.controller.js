@@ -5,11 +5,11 @@ import getDataUri from "../utils/datauri.js";
 import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 
-/* -------------------- COOKIE SETTINGS -------------------- */
+/* -------------------- COOKIE SETTINGS (FIXED) -------------------- */
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: true,        // ✅ REQUIRED for Render HTTPS
+  sameSite: "none",    // ✅ REQUIRED for cross-site cookies (Vercel <-> Render)
   path: "/",
   maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
@@ -19,35 +19,29 @@ export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password)
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
-    }
 
-    const userExists = await User.findOne({
-      $or: [{ email }, { username }],
-    });
-
-    if (userExists) {
-      return res.status(400).json({
-        success: false,
-        message: "Email or Username already in use",
-      });
-    }
+    const userExists = await User.findOne({ email });
+    if (userExists)
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already in use" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await User.create({
-      username: username.toLowerCase(),
-      email: email.toLowerCase(),
+      username,
+      email,
       password: hashedPassword,
       followers: [],
       following: [],
       bookmarks: [],
       posts: [],
       bio: "",
-      gender: "other",
+      gender: "",
       profilePicture: "",
     });
 
@@ -56,10 +50,10 @@ export const register = async (req, res) => {
       message: "Account created successfully",
     });
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Server error while registering",
+      error: error.message,
     });
   }
 };
@@ -69,40 +63,33 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password)
       return res
         .status(400)
         .json({ success: false, message: "Email and password required" });
-    }
 
-    // IMPORTANT: password is select:false
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+password"
-    );
+    // IMPORTANT: Because password is `select:false` in schema
+    let user = await User.findOne({ email }).select("+password");
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Incorrect email or password",
-      });
-    }
+    if (!user)
+      return res
+        .status(401)
+        .json({ success: false, message: "Incorrect email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Incorrect email or password",
-      });
-    }
+    if (!isMatch)
+      return res
+        .status(401)
+        .json({ success: false, message: "Incorrect email or password" });
 
-    // ✅ Create JWT
+    // Create token
     const token = jwt.sign(
       { userId: user._id },
       process.env.SECRET_KEY,
       { expiresIn: "1d" }
     );
 
-    // ✅ Fetch user's posts
+    // Fetch user's posts
     const userPosts = await Post.find({ author: user._id }).sort({
       createdAt: -1,
     });
@@ -121,7 +108,7 @@ export const login = async (req, res) => {
     };
 
     return res
-      .cookie("token", token, cookieOptions)
+      .cookie("token", token, cookieOptions)   // ✅ FIXED COOKIE CONFIG
       .status(200)
       .json({
         success: true,
@@ -129,10 +116,11 @@ export const login = async (req, res) => {
         user: formattedUser,
       });
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
+    console.log("LOGIN ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Server error during login",
+      error: error.message,
     });
   }
 };
@@ -141,13 +129,13 @@ export const login = async (req, res) => {
 export const logout = async (_, res) => {
   try {
     return res
-      .clearCookie("token", cookieOptions)
+      .cookie("token", "", { ...cookieOptions, maxAge: 0 })
       .json({ success: true, message: "Logged out successfully" });
   } catch (error) {
-    console.error("LOGOUT ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Server error during logout",
+      error: error.message,
     });
   }
 };
@@ -171,18 +159,17 @@ export const getProfile = async (req, res) => {
         },
       });
 
-    if (!user) {
+    if (!user)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
 
     return res.status(200).json({ success: true, user });
   } catch (error) {
-    console.error("GET PROFILE ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to load profile",
+      error: error.message,
     });
   }
 };
@@ -194,7 +181,7 @@ export const editProfile = async (req, res) => {
     const { bio, gender } = req.body;
     const profilePhoto = req.file;
 
-    let cloudResponse = null;
+    let cloudResponse;
 
     if (profilePhoto) {
       const fileUri = getDataUri(profilePhoto);
@@ -202,16 +189,14 @@ export const editProfile = async (req, res) => {
     }
 
     const user = await User.findById(userId).select("-password");
-
-    if (!user) {
+    if (!user)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
 
     if (bio !== undefined) user.bio = bio;
     if (gender !== undefined) user.gender = gender;
-    if (cloudResponse) user.profilePicture = cloudResponse.secure_url;
+    if (profilePhoto) user.profilePicture = cloudResponse.secure_url;
 
     await user.save();
 
@@ -221,10 +206,10 @@ export const editProfile = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.error("EDIT PROFILE ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to update profile",
+      error: error.message,
     });
   }
 };
@@ -240,10 +225,10 @@ export const getSuggestedUsers = async (req, res) => {
 
     return res.status(200).json({ success: true, users });
   } catch (error) {
-    console.error("SUGGESTED USERS ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to load suggested users",
+      error: error.message,
     });
   }
 };
@@ -254,46 +239,48 @@ export const followOrUnfollow = async (req, res) => {
     const followerId = req.id;
     const targetId = req.params.id;
 
-    if (followerId === targetId) {
+    if (followerId === targetId)
       return res.status(400).json({
         success: false,
         message: "You cannot follow yourself",
       });
-    }
 
     const user = await User.findById(followerId);
     const targetUser = await User.findById(targetId);
 
-    if (!user || !targetUser) {
+    if (!user || !targetUser)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
 
     const isFollowing = user.following.includes(targetId);
 
     if (isFollowing) {
       user.following.pull(targetId);
       targetUser.followers.pull(followerId);
-    } else {
-      user.following.push(targetId);
-      targetUser.followers.push(followerId);
+      await user.save();
+      await targetUser.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Unfollowed successfully",
+      });
     }
 
+    user.following.push(targetId);
+    targetUser.followers.push(followerId);
     await user.save();
     await targetUser.save();
 
     return res.status(200).json({
       success: true,
-      message: isFollowing
-        ? "Unfollowed successfully"
-        : "Followed successfully",
+      message: "Followed successfully",
     });
   } catch (error) {
-    console.error("FOLLOW ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to follow/unfollow",
+      error: error.message,
     });
   }
 };

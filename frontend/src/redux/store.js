@@ -20,12 +20,12 @@ import {
 import storage from "redux-persist/lib/storage";
 
 // --------------------------------------------------
-// PERSIST ONLY AUTH USER (BEST PRACTICE)
+// PERSIST ONLY AUTH (BEST PRACTICE)
 // --------------------------------------------------
 const persistConfig = {
   key: "auth",
   storage,
-  whitelist: ["user"],
+  whitelist: ["user"], // only user is stored
 };
 
 // --------------------------------------------------
@@ -44,13 +44,10 @@ const rootReducer = combineReducers({
 // --------------------------------------------------
 const store = configureStore({
   reducer: rootReducer,
-
   devTools: true,
-
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // Ignore redux-persist internal actions
         ignoredActions: [
           FLUSH,
           REHYDRATE,
@@ -58,10 +55,11 @@ const store = configureStore({
           PERSIST,
           PURGE,
           REGISTER,
-        ],
 
-        // Ignore socket instance object (non-serializable)
-        ignoredPaths: ["socket.socket"],
+          // ✅ ADD THIS
+          "socket/setSocket",
+        ],
+        ignoredPaths: ["socket.socket"], // ✅ ignore socket object path too
       },
     }),
 });

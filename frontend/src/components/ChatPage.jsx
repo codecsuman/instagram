@@ -13,38 +13,26 @@ const ChatPage = () => {
   const [textMessage, setTextMessage] = useState("");
   const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.auth.user);
-  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers);
-  const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
-  const onlineUsers = useSelector((state) => state.socket.onlineUsers);
+  const { user, suggestedUsers } = useSelector((state) => state.auth);
+  const { selectedChatUser } = useSelector((state) => state.chat);
+  const { onlineUsers, socket } = useSelector((state) => state.socket);   // ✅ Clean
 
-  // ✅ CORRECT SOCKET REFERENCE (FIX)
-  const socket = window._socket || null;
-
+  // Realtime listener
   useGetRTM(socket);
 
-  // ------------------------------------
   // SEND MESSAGE
-  // ------------------------------------
   const sendMessageHandler = async (receiverId) => {
     if (!textMessage.trim()) return;
-
-    if (!socket) {
-      console.error("❌ Socket not connected");
-      return;
-    }
 
     try {
       const res = await api.post(`/message/send/${receiverId}`, {
         textMessage,
       });
 
-      if (res?.data?.success) {
-        // Instantly update my chat
+      if (res.data.success) {
         dispatch(addMessage(res.data.newMessage));
 
-        // Send to receiver (socket server handles delivery)
-        socket.emit("sendMessage", {
+        socket?.emit("sendMessage", {
           receiverId,
           message: res.data.newMessage,
         });
@@ -52,7 +40,7 @@ const ChatPage = () => {
         setTextMessage("");
       }
     } catch (error) {
-      console.error("SEND MESSAGE ERROR:", error?.response?.data || error);
+      console.log("SEND ERR:", error);
     }
   };
 
@@ -78,8 +66,8 @@ const ChatPage = () => {
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
 
-                <div>
-                  <span className="font-medium block">{u.username}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{u.username}</span>
                   <span
                     className={`text-xs font-bold ${
                       isOnline ? "text-green-600" : "text-red-600"
@@ -97,8 +85,7 @@ const ChatPage = () => {
       {/* RIGHT CHAT WINDOW */}
       {selectedChatUser ? (
         <section className="flex-1 border-l border-gray-300 flex flex-col h-full">
-          {/* HEADER */}
-          <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 bg-white sticky top-0 z-10">
+          <div className="flex gap-3 items-center px-3 py-2 border-b bg-white sticky top-0 z-10">
             <Avatar>
               <AvatarImage src={selectedChatUser.profilePicture} />
               <AvatarFallback>U</AvatarFallback>
@@ -106,11 +93,9 @@ const ChatPage = () => {
             <span>{selectedChatUser.username}</span>
           </div>
 
-          {/* MESSAGES */}
           <Messages selectedUser={selectedChatUser} />
 
-          {/* INPUT */}
-          <div className="flex items-center p-4 border-t border-gray-200">
+          <div className="flex items-center p-4 border-t">
             <Input
               value={textMessage}
               onChange={(e) => setTextMessage(e.target.value)}
