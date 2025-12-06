@@ -18,8 +18,8 @@ const ChatPage = () => {
   const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
   const onlineUsers = useSelector((state) => state.socket.onlineUsers);
 
-  // ✅ SAFELY GET SOCKET FROM APP
-  const socket = window.socketRef || null;
+  // ✅ CORRECT SOCKET REFERENCE (FIX)
+  const socket = window._socket || null;
 
   useGetRTM(socket);
 
@@ -43,7 +43,7 @@ const ChatPage = () => {
         // Instantly update my chat
         dispatch(addMessage(res.data.newMessage));
 
-        // Send to receiver
+        // Send to receiver (socket server handles delivery)
         socket.emit("sendMessage", {
           receiverId,
           message: res.data.newMessage,

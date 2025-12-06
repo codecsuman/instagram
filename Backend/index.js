@@ -17,6 +17,7 @@ import messageRoute from "./routes/message.route.js";
 
 // ENV
 const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 // ----------------------------
 // GLOBAL MIDDLEWARE
@@ -26,11 +27,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ----------------------------
-// ✅ CORS — FINAL FIX
+// ✅ CORS — FINAL PRODUCTION FIX
 // ----------------------------
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://instagram-vert-nu.vercel.app",
+  CLIENT_URL,             // ✅ Vercel frontend
+  "http://localhost:5173" // ✅ local dev
 ];
 
 app.use(
@@ -55,7 +56,8 @@ app.use("/api/v1/message", messageRoute);
 // ----------------------------
 // START SERVER
 // ----------------------------
-server.listen(PORT, () => {
-  connectDB();
+server.listen(PORT, async () => {
+  await connectDB();
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log("✅ Allowed Origin:", CLIENT_URL);
 });

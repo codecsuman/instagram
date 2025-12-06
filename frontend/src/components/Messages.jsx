@@ -6,8 +6,8 @@ import { useSelector } from "react-redux";
 import useGetRTM from "@/hooks/useGetRTM";
 
 const Messages = ({ selectedUser }) => {
-  // ✅ CORRECT SOCKET REFERENCE
-  const socket = window.socketRef || null;
+  // ✅ CORRECT SOCKET REFERENCE (FIXED)
+  const socket = window._socket || null;
 
   const { messages } = useSelector((store) => store.chat);
   const { user } = useSelector((store) => store.auth);
@@ -55,8 +55,7 @@ const Messages = ({ selectedUser }) => {
         )}
 
         {messages.map((msg) => {
-          const fromMe =
-            String(msg.senderId) === String(user?._id);
+          const fromMe = String(msg.senderId) === String(user?._id);
 
           return (
             <div
