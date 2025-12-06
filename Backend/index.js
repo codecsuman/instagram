@@ -1,4 +1,3 @@
-// index.js
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -10,7 +9,7 @@ import connectDB from "./utils/db.js";
 // Load socket server (app + server exported)
 import { app, server } from "./socket/socket.js";
 
-// ✅ TRUST RENDER PROXY (IMPORTANT FOR COOKIE)
+// ✅ TRUST RENDER PROXY (REQUIRED FOR COOKIE ON HTTPS)
 app.set("trust proxy", 1);
 
 // Routes
@@ -30,23 +29,30 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ----------------------------
-// ✅ CORS — FINAL PRODUCTION FIX (COOKIE SAFE)
+// ✅ FINAL CORS CONFIGURATION (RENDER + VERCEL FIX)
 // ----------------------------
 const allowedOrigins = [
   CLIENT_URL,
-  "http://localhost:5173"
+  "https://instagram-green-pi.vercel.app",
+  "https://instagram-git-main-codecsumans-projects.vercel.app",
+  "http://localhost:5173",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(null, false); // ✅ no crash
+      if (!origin) return callback(null, true); // Allow Postman, Render cron etc.
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.error("❌ CORS BLOCKED:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
