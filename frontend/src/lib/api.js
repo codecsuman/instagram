@@ -1,38 +1,41 @@
 import axios from "axios";
 
-// Base backend URL (Render)
-const API_URL = import.meta.env.VITE_API_URL || "https://instagram-1-77f5.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const api = axios.create({
   baseURL: `${API_URL}/api/v1`,
-  withCredentials: true,   // ✅ IMPORTANT for cookies
+  withCredentials: true,
   timeout: 10000,
 });
 
-// ----------------------------------------------------
-// REQUEST INTERCEPTOR
-// ----------------------------------------------------
-api.interceptors.request.use(
-  (config) => {
-    return config;   // ✅ no token needed (cookie-based auth)
-  },
-  (error) => Promise.reject(error)
-);
+// Add token automatically
+api.interceptors.request.use((config) => {
+  const persisted = localStorage.getItem("persist:root");
 
-// ----------------------------------------------------
-// RESPONSE INTERCEPTOR → AUTO LOGOUT ON 401
-// ----------------------------------------------------
+  if (persisted) {
+    const parsed = JSON.parse(persisted);
+    const auth = parsed.auth ? JSON.parse(parsed.auth) : null;
+
+    if (auth?.token) {
+      config.headers.Authorization = `Bearer ${auth.token}`;
+    }
+  }
+
+  return config;
+});
+
+// Auto redirect on 401
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401) {
-      // Clear persisted redux state
+  (res) => res,
+  (err) => {
+    if (err?.response?.status === 401) {
+      // clear redux persist properly
       localStorage.removeItem("persist:root");
+      localStorage.removeItem("token");
 
-      // Redirect to login
       window.location.href = "/login";
     }
-    return Promise.reject(error);
+    return Promise.reject(err);
   }
 );
 

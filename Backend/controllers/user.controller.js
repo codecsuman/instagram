@@ -1,3 +1,4 @@
+// controllers/user.controller.js
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -5,13 +6,11 @@ import getDataUri from "../utils/datauri.js";
 import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 
-/* -------------------- COOKIE SETTINGS (AUTO MODE) -------------------- */
-const isProduction = process.env.NODE_ENV === "production";
-
+/* -------------------- COOKIE SETTINGS -------------------- */
 const cookieOptions = {
   httpOnly: true,
-  secure: isProduction,           // true only on Render
-  sameSite: isProduction ? "none" : "lax",  // production vs localhost
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
   maxAge: 24 * 60 * 60 * 1000,
 };
@@ -70,6 +69,7 @@ export const login = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Email and password required" });
 
+    // IMPORTANT: Because password is `select:false`
     let user = await User.findOne({ email }).select("+password");
 
     if (!user)
@@ -83,12 +83,14 @@ export const login = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Incorrect email or password" });
 
+    // Create token
     const token = jwt.sign(
       { userId: user._id },
       process.env.SECRET_KEY,
       { expiresIn: "1d" }
     );
 
+    // Fetch posts
     const userPosts = await Post.find({ author: user._id }).sort({
       createdAt: -1,
     });
@@ -108,7 +110,6 @@ export const login = async (req, res) => {
 
     return res
       .cookie("token", token, cookieOptions)
-      .status(200)
       .json({
         success: true,
         message: `Welcome back, ${user.username}`,
@@ -232,7 +233,7 @@ export const getSuggestedUsers = async (req, res) => {
   }
 };
 
-/* ------------------------- FOLLOW / UNFOLLOW ------------------------- */
+/* ------------------------- FOLLOW or UNFOLLOW ------------------------- */
 export const followOrUnfollow = async (req, res) => {
   try {
     const followerId = req.id;
@@ -259,6 +260,7 @@ export const followOrUnfollow = async (req, res) => {
       targetUser.followers.pull(followerId);
       await user.save();
       await targetUser.save();
+
       return res.status(200).json({
         success: true,
         message: "Unfollowed successfully",
@@ -270,10 +272,9 @@ export const followOrUnfollow = async (req, res) => {
     await user.save();
     await targetUser.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "Followed successfully",
-    });
+    return res
+      .status(200)
+      .json({ success: true, message: "Followed successfully" });
   } catch (error) {
     return res.status(500).json({
       success: false,

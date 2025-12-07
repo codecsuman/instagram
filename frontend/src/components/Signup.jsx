@@ -37,6 +37,7 @@ const Signup = () => {
       return false;
     }
 
+    // Email regex check
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(input.email)) {
       toast.error("Please enter a valid email address");
@@ -73,8 +74,7 @@ const Signup = () => {
 
       setInput({ username: "", email: "", password: "" });
 
-      // ✅ FIX HERE (removed space)
-      navigate("/login");
+      navigate("/login ");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
@@ -90,11 +90,10 @@ const Signup = () => {
       >
         <div className="my-4 text-center">
           <h1 className="font-bold text-xl">LOGO</h1>
-          <p className="text-sm">
-            Signup to see photos & videos from your friends
-          </p>
+          <p className="text-sm">Signup to see photos & videos from your friends</p>
         </div>
 
+        {/* USERNAME */}
         <div>
           <span className="font-medium">Username</span>
           <Input
@@ -106,6 +105,7 @@ const Signup = () => {
           />
         </div>
 
+        {/* EMAIL */}
         <div>
           <span className="font-medium">Email</span>
           <Input
@@ -117,6 +117,7 @@ const Signup = () => {
           />
         </div>
 
+        {/* PASSWORD */}
         <div>
           <span className="font-medium">Password</span>
           <Input
@@ -128,6 +129,7 @@ const Signup = () => {
           />
         </div>
 
+        {/* BUTTON */}
         {loading ? (
           <Button disabled>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

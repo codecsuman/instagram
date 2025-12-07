@@ -13,16 +13,12 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setOnlineUsers,
-  setSocketConnected,
-  setSocketId,
-  clearOnlineUsers,
-} from "./redux/socketSlice";
+import { setOnlineUsers } from "./redux/socketSlice";
 import { setLikeNotification } from "./redux/rtnSlice";
 
 // Socket.io
 import { io } from "socket.io-client";
+
 
 // --------------------------------------------
 // ROUTES
@@ -42,9 +38,12 @@ const router = createBrowserRouter([
       { path: "/chat", element: <ChatPage /> },
     ],
   },
+
+  // Public routes
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
 ]);
+
 
 // --------------------------------------------
 // MAIN APP
@@ -54,12 +53,9 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // If user logs out → reset socket state
-    if (!user?._id) {
-      dispatch(clearOnlineUsers());
-      return;
-    }
+    if (!user) return;
 
+    // Create socket only when user is logged in
     const socket = io(import.meta.env.VITE_API_URL, {
       query: { userId: user._id },
       transports: ["websocket", "polling"],
@@ -68,36 +64,21 @@ function App() {
       reconnectionAttempts: 10,
     });
 
-    // -----------------------------
-    // SOCKET EVENTS
-    // -----------------------------
-    socket.on("connect", () => {
-      console.log("✅ Socket Connected:", socket.id);
-      dispatch(setSocketConnected(true));
-      dispatch(setSocketId(socket.id));
-    });
-
-    socket.on("disconnect", () => {
-      console.log("❌ Socket Disconnected");
-      dispatch(setSocketConnected(false));
-    });
-
+    // Online users
     socket.on("getOnlineUsers", (users) => {
       dispatch(setOnlineUsers(users));
     });
 
+    // Real-time notifications
     socket.on("notification", (noti) => {
       dispatch(setLikeNotification(noti));
     });
 
-    // -----------------------------
-    // CLEANUP ON UNMOUNT / LOGOUT
-    // -----------------------------
+    // cleanup when component unmounts OR user logs out
     return () => {
       socket.disconnect();
-      dispatch(clearOnlineUsers());
     };
-  }, [user, dispatch]);
+  }, [user]);
 
   return <RouterProvider router={router} />;
 }

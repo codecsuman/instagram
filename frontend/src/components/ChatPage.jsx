@@ -13,14 +13,18 @@ const ChatPage = () => {
   const [textMessage, setTextMessage] = useState("");
   const dispatch = useDispatch();
 
-  const { user, suggestedUsers } = useSelector((state) => state.auth);
-  const { selectedChatUser } = useSelector((state) => state.chat);
-  const { onlineUsers, socket } = useSelector((state) => state.socket);   // ✅ Clean
+  const user = useSelector((state) => state.auth.user);
+  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers);
+  const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
+  const onlineUsers = useSelector((state) => state.socket.onlineUsers);
 
-  // Realtime listener
+  // Pass your socket instance (from App.jsx) to hook
+  const socket = window.socketRef?.current;
   useGetRTM(socket);
 
-  // SEND MESSAGE
+  // ------------------------------------------------
+  // SEND MESSAGE (socket + API)
+  // ------------------------------------------------
   const sendMessageHandler = async (receiverId) => {
     if (!textMessage.trim()) return;
 
@@ -30,8 +34,10 @@ const ChatPage = () => {
       });
 
       if (res.data.success) {
+        // 1. Update my own chat instantly
         dispatch(addMessage(res.data.newMessage));
 
+        // 2. Emit message to receiver
         socket?.emit("sendMessage", {
           receiverId,
           message: res.data.newMessage,
@@ -85,21 +91,28 @@ const ChatPage = () => {
       {/* RIGHT CHAT WINDOW */}
       {selectedChatUser ? (
         <section className="flex-1 border-l border-gray-300 flex flex-col h-full">
-          <div className="flex gap-3 items-center px-3 py-2 border-b bg-white sticky top-0 z-10">
+          {/* TOP BAR */}
+          <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 bg-white sticky top-0 z-10">
             <Avatar>
               <AvatarImage src={selectedChatUser.profilePicture} />
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
-            <span>{selectedChatUser.username}</span>
+
+            <div>
+              <span>{selectedChatUser.username}</span>
+            </div>
           </div>
 
+          {/* MESSAGES */}
           <Messages selectedUser={selectedChatUser} />
 
-          <div className="flex items-center p-4 border-t">
+          {/* INPUT BAR */}
+          <div className="flex items-center p-4 border-t border-gray-300">
             <Input
               value={textMessage}
               onChange={(e) => setTextMessage(e.target.value)}
-              className="flex-1 mr-2"
+              type="text"
+              className="flex-1 mr-2 focus-visible:ring-transparent"
               placeholder="Message..."
             />
             <Button onClick={() => sendMessageHandler(selectedChatUser._id)}>
@@ -108,6 +121,7 @@ const ChatPage = () => {
           </div>
         </section>
       ) : (
+        /* EMPTY STATE */
         <div className="flex flex-col items-center justify-center mx-auto">
           <MessageCircleCode className="w-32 h-32 my-4" />
           <h1 className="font-medium">Your messages</h1>

@@ -6,20 +6,22 @@ import { useSelector } from "react-redux";
 import useGetRTM from "@/hooks/useGetRTM";
 
 const Messages = ({ selectedUser }) => {
-  // ✅ CORRECT: Read socket from Redux
-  const socket = useSelector((state) => state.socket.socket);
+  // Read socket from global window (set in App.jsx)
+  const socket = window._socket || null;
 
   const { messages } = useSelector((store) => store.chat);
   const { user } = useSelector((store) => store.auth);
 
-  const bottomRef = useRef(null);
+  const bottomRef = useRef();
 
   // Real-time listener
   useGetRTM(socket);
 
   // Smooth scroll on message update
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
   }, [messages]);
 
   return (
@@ -46,6 +48,7 @@ const Messages = ({ selectedUser }) => {
       {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
 
+        {/* EMPTY STATE */}
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-20">
             No messages yet — start the conversation!

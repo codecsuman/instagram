@@ -32,11 +32,11 @@ const persistConfig = {
 // ROOT REDUCER
 // --------------------------------------------------
 const rootReducer = combineReducers({
-  auth: persistReducer(persistConfig, authReducer),
-  post: postReducer,
-  socket: socketReducer,
-  chat: chatReducer,
-  realTimeNotification: rtnReducer,
+  auth: persistReducer(persistConfig, authReducer), // persisted
+  post: postReducer, // not persisted
+  socket: socketReducer, // not persisted
+  chat: chatReducer, // not persisted
+  realTimeNotification: rtnReducer, // not persisted
 });
 
 // --------------------------------------------------
@@ -55,11 +55,8 @@ const store = configureStore({
           PERSIST,
           PURGE,
           REGISTER,
-
-          // ✅ ADD THIS
-          "socket/setSocket",
         ],
-        ignoredPaths: ["socket.socket"], // ✅ ignore socket object path too
+        ignoredPaths: ["socket.socket"], // ignore non-serializable socket
       },
     }),
 });
