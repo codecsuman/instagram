@@ -36,31 +36,4 @@ A full-stack Instagram-like web application built using the MERN stack with auth
 
 ---
 
-## 📁 Project Structure
-
-insta_app/
-│
-├── Backend/
-│ ├── controllers/
-│ ├── models/
-│ ├── routes/
-│ ├── socket/
-│ ├── middlewares/
-│ ├── utils/
-│ ├── .env
-│ └── index.js
-│
-├── frontend/
-│ ├── src/
-│ │ ├── components/
-│ │ ├── redux/
-│ │ ├── hooks/
-│ │ ├── lib/
-│ │ └── App.jsx
-│ ├── public/
-│ ├── vite.config.js
-│ └── package.json
-│
-└── README.md
-        
 
