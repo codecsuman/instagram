@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Bookmark, MessageCircle, MoreHorizontal, Send } from "lucide-react";
@@ -8,25 +8,35 @@ import CommentDialog from "./CommentDialog";
 import { useDispatch, useSelector } from "react-redux";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { setPosts, setSelectedPost } from "@/redux/postSlice";
+import {
+  setPosts,
+  setSelectedPost,
+  toggleBookmark,
+} from "@/redux/postSlice";
 import { Badge } from "./ui/badge";
 
 const Post = ({ post }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((store) => store.auth);
-  const { posts } = useSelector((store) => store.post);
+  const { posts, selectedPost } = useSelector((store) => store.post);
 
   const [open, setOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
 
-  // normalize id
   const userId = user?._id?.toString();
-  const isLiked = post.likes?.map(String).includes(userId);
-  const likeCount = post.likes?.length || 0;
 
-  // ------------------------------
+  const likes = useMemo(() => (Array.isArray(post?.likes) ? post.likes : []), [post?.likes]);
+  const comments = useMemo(
+    () => (Array.isArray(post?.comments) ? post.comments : []),
+    [post?.comments]
+  );
+
+  const isLiked = likes.map(String).includes(userId);
+  const likeCount = likes.length;
+
+  // ---------------------------------------------------
   // LIKE / DISLIKE
-  // ------------------------------
+  // ---------------------------------------------------
   const likeHandler = async () => {
     try {
       const action = isLiked ? "dislike" : "like";
@@ -35,61 +45,72 @@ const Post = ({ post }) => {
       if (!res.data.success) return;
 
       const updatedLikes = isLiked
-        ? post.likes.filter((id) => id.toString() !== userId)
-        : [...post.likes, userId];
+        ? likes.filter((id) => id.toString() !== userId)
+        : [...likes, userId];
 
-      // update posts list
-      const updated = posts.map((p) =>
+      const updatedPosts = posts.map((p) =>
         p._id === post._id ? { ...p, likes: updatedLikes } : p
       );
 
-      dispatch(setPosts(updated));
+      dispatch(setPosts(updatedPosts));
 
-      // also update selectedPost (for CommentDialog)
-      dispatch(setSelectedPost({ ...post, likes: updatedLikes }));
-    } catch {
+      // update selected post only if this same post is currently selected
+      if (selectedPost?._id === post._id) {
+        dispatch(
+          setSelectedPost({
+            ...selectedPost,
+            likes: updatedLikes,
+          })
+        );
+      }
+    } catch (error) {
+      console.error("LIKE ERROR:", error);
       toast.error("Error updating like");
     }
   };
 
-  // ------------------------------
+  // ---------------------------------------------------
   // ADD COMMENT
-  // ------------------------------
+  // ---------------------------------------------------
   const addComment = async () => {
     if (!commentText.trim()) return;
 
     try {
       const res = await api.post(`/post/${post._id}/comment`, {
-        text: commentText,
+        text: commentText.trim(),
       });
 
       if (!res.data.success) return;
 
       const newComment = res.data.comment;
+      const updatedComments = [...comments, newComment];
 
       const updatedPosts = posts.map((p) =>
-        p._id === post._id
-          ? { ...p, comments: [...p.comments, newComment] }
-          : p
+        p._id === post._id ? { ...p, comments: updatedComments } : p
       );
 
       dispatch(setPosts(updatedPosts));
-      dispatch(
-        setSelectedPost({
-          ...post,
-          comments: [...post.comments, newComment],
-        })
-      );
+
+      if (selectedPost?._id === post._id) {
+        dispatch(
+          setSelectedPost({
+            ...selectedPost,
+            comments: updatedComments,
+          })
+        );
+      }
 
       setCommentText("");
-    } catch {
+      toast.success("Comment added");
+    } catch (error) {
+      console.error("COMMENT ERROR:", error);
       toast.error("Failed to add comment");
     }
   };
 
-  // ------------------------------
+  // ---------------------------------------------------
   // DELETE POST
-  // ------------------------------
+  // ---------------------------------------------------
   const deletePostHandler = async () => {
     try {
       const res = await api.delete(`/post/delete/${post._id}`);
@@ -97,34 +118,52 @@ const Post = ({ post }) => {
       if (res.data.success) {
         const updated = posts.filter((p) => p._id !== post._id);
         dispatch(setPosts(updated));
+
+        if (selectedPost?._id === post._id) {
+          dispatch(setSelectedPost(null));
+        }
+
         toast.success("Post deleted");
       }
-    } catch {
+    } catch (error) {
+      console.error("DELETE POST ERROR:", error);
       toast.error("Failed to delete post");
     }
   };
 
-  // ------------------------------
+  // ---------------------------------------------------
   // BOOKMARK
-  // ------------------------------
+  // ---------------------------------------------------
   const bookmarkHandler = async () => {
     try {
       const res = await api.get(`/post/${post._id}/bookmark`);
-      toast.success(res.data.message || "Saved");
-    } catch {
+
+      if (res.data.success) {
+        dispatch(
+          toggleBookmark({
+            postId: post._id,
+            type: res.data.type, // "saved" | "unsaved"
+          })
+        );
+
+        toast.success(res.data.message || "Bookmark updated");
+      }
+    } catch (error) {
+      console.error("BOOKMARK ERROR:", error);
       toast.error("Bookmark failed");
     }
   };
 
   return (
     <div className="my-8 w-full max-w-sm mx-auto">
-
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Avatar>
-            <AvatarImage src={post.author?.profilePicture} />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarImage src={post.author?.profilePicture || ""} alt="profile" />
+            <AvatarFallback>
+              {post.author?.username?.charAt(0)?.toUpperCase() || "U"}
+            </AvatarFallback>
           </Avatar>
 
           <div className="flex items-center gap-3">
@@ -138,7 +177,9 @@ const Post = ({ post }) => {
         {/* OPTIONS */}
         <Dialog>
           <DialogTrigger asChild>
-            <MoreHorizontal className="cursor-pointer" />
+            <button type="button">
+              <MoreHorizontal className="cursor-pointer" />
+            </button>
           </DialogTrigger>
 
           <DialogContent className="flex flex-col text-center items-center">
@@ -156,7 +197,9 @@ const Post = ({ post }) => {
         className="rounded-sm my-2 w-full aspect-square object-cover"
         src={post.image}
         alt="post"
-        onError={(e) => (e.target.src = "/fallback.png")}
+        onError={(e) => {
+          e.currentTarget.src = "/fallback.png";
+        }}
       />
 
       {/* ACTIONS */}
@@ -200,7 +243,7 @@ const Post = ({ post }) => {
       </p>
 
       {/* VIEW COMMENTS */}
-      {post.comments.length > 0 && (
+      {comments.length > 0 && (
         <span
           className="cursor-pointer text-sm text-gray-400"
           onClick={() => {
@@ -208,7 +251,7 @@ const Post = ({ post }) => {
             setOpen(true);
           }}
         >
-          View all {post.comments.length} comments
+          View all {comments.length} comments
         </span>
       )}
 
@@ -216,7 +259,7 @@ const Post = ({ post }) => {
       <CommentDialog open={open} setOpen={setOpen} />
 
       {/* COMMENT INPUT */}
-      <div className="flex items-center justify-between mt-1">
+      <div className="flex items-center justify-between mt-1 gap-2">
         <input
           type="text"
           placeholder="Add a comment..."
@@ -226,12 +269,13 @@ const Post = ({ post }) => {
         />
 
         {commentText.trim() && (
-          <span
-            className="text-[#3BADF8] cursor-pointer"
+          <button
+            type="button"
+            className="text-[#3BADF8] cursor-pointer font-medium"
             onClick={addComment}
           >
             Post
-          </span>
+          </button>
         )}
       </div>
     </div>

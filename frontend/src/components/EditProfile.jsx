@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -19,14 +19,13 @@ import api from "@/lib/api";
 import { readFileAsDataURL } from "@/lib/utils";
 
 const EditProfile = () => {
-  const imageRef = useRef();
+  const imageRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { user } = useSelector((store) => store.auth);
 
   const [loading, setLoading] = useState(false);
-
   const [input, setInput] = useState({
     bio: "",
     gender: "",
@@ -40,10 +39,10 @@ const EditProfile = () => {
   useEffect(() => {
     if (user) {
       setInput({
-        bio: user?.bio || "",
-        gender: user?.gender || "",
+        bio: user.bio || "",
+        gender: user.gender || "other",
         profilePhotoFile: null,
-        profilePhotoPreview: user?.profilePicture || "",
+        profilePhotoPreview: user.profilePicture || "",
       });
     }
   }, [user]);
@@ -52,35 +51,40 @@ const EditProfile = () => {
   // FILE UPLOAD
   // ---------------------------------------------------
   const fileChangeHandler = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Only image files are allowed");
-      return;
+      if (!file.type.startsWith("image/")) {
+        toast.error("Only image files are allowed");
+        return;
+      }
+
+      const preview = await readFileAsDataURL(file);
+
+      setInput((prev) => ({
+        ...prev,
+        profilePhotoFile: file,
+        profilePhotoPreview: preview,
+      }));
+    } catch (error) {
+      console.error("Profile image preview error:", error);
+      toast.error("Failed to preview image");
     }
-
-    const preview = await readFileAsDataURL(file);
-
-    setInput((prev) => ({
-      ...prev,
-      profilePhotoFile: file,
-      profilePhotoPreview: preview,
-    }));
   };
 
   // ---------------------------------------------------
   // SUBMIT PROFILE UPDATE
   // ---------------------------------------------------
   const editProfileHandler = async () => {
-    if (loading) return;
+    if (!user?._id || loading) return;
 
     const formData = new FormData();
 
     formData.append("bio", input.bio.trim());
-    if (input.gender) formData.append("gender", input.gender);
+    formData.append("gender", input.gender || "other");
 
-    // field name MUST MATCH backend multer
+    // backend multer field name = profilePicture
     if (input.profilePhotoFile) {
       formData.append("profilePicture", input.profilePhotoFile);
     }
@@ -89,24 +93,31 @@ const EditProfile = () => {
       setLoading(true);
 
       const res = await api.patch("/user/profile/edit", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       if (res.data.success) {
-        // Update redux + localStorage
         dispatch(setAuthUser(res.data.user));
-
-        toast.success("Profile updated successfully");
-
+        toast.success(res.data.message || "Profile updated successfully");
         navigate(`/profile/${res.data.user._id}`);
+      } else {
+        toast.error(res.data.message || "Failed to update profile");
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      console.error("EDIT PROFILE ERROR:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  if (!user) return null;
 
   return (
     <div className="flex max-w-2xl mx-auto pl-10">
@@ -140,7 +151,8 @@ const EditProfile = () => {
           />
 
           <Button
-            onClick={() => imageRef.current.click()}
+            type="button"
+            onClick={() => imageRef.current?.click()}
             className="bg-[#0095F6] h-8 hover:bg-[#318bc7]"
           >
             Change photo
@@ -172,6 +184,7 @@ const EditProfile = () => {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select gender" />
             </SelectTrigger>
+
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="male">Male</SelectItem>
@@ -185,12 +198,13 @@ const EditProfile = () => {
         {/* SUBMIT */}
         <div className="flex justify-end">
           {loading ? (
-            <Button className="w-fit bg-[#0095F6] hover:bg-[#2a8ccd]">
+            <Button disabled className="w-fit bg-[#0095F6] hover:bg-[#2a8ccd]">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Please wait
             </Button>
           ) : (
             <Button
+              type="button"
               onClick={editProfileHandler}
               className="w-fit bg-[#0095F6] hover:bg-[#2a8ccd]"
             >

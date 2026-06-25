@@ -1,11 +1,5 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-
-import authReducer from "./authSlice.js";
-import postReducer from "./postSlice.js";
-import socketReducer from "./socketSlice.js";
-import chatReducer from "./chatSlice.js";
-import rtnReducer from "./rtnSlice.js";
-
+import storage from "redux-persist/lib/storage";
 import {
   persistReducer,
   persistStore,
@@ -17,26 +11,31 @@ import {
   REGISTER,
 } from "redux-persist";
 
-import storage from "redux-persist/lib/storage";
+import authReducer from "./authSlice.js";
+import chatReducer from "./chatSlice.js";
+import postReducer from "./postSlice.js";
+import rtnReducer from "./rtnSlice.js";
+import socketReducer from "./socketSlice.js";
 
 // --------------------------------------------------
-// PERSIST ONLY AUTH (BEST PRACTICE)
+// PERSIST CONFIG
+// persist only logged-in auth user
 // --------------------------------------------------
-const persistConfig = {
+const authPersistConfig = {
   key: "auth",
   storage,
-  whitelist: ["user"], // only user is stored
+  whitelist: ["user"],
 };
 
 // --------------------------------------------------
 // ROOT REDUCER
 // --------------------------------------------------
 const rootReducer = combineReducers({
-  auth: persistReducer(persistConfig, authReducer), // persisted
-  post: postReducer, // not persisted
-  socket: socketReducer, // not persisted
-  chat: chatReducer, // not persisted
-  realTimeNotification: rtnReducer, // not persisted
+  auth: persistReducer(authPersistConfig, authReducer),
+  post: postReducer,
+  chat: chatReducer,
+  socket: socketReducer,
+  realTimeNotification: rtnReducer,
 });
 
 // --------------------------------------------------
@@ -44,25 +43,17 @@ const rootReducer = combineReducers({
 // --------------------------------------------------
 const store = configureStore({
   reducer: rootReducer,
-  devTools: true,
+  devTools: import.meta.env.MODE !== "production",
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [
-          FLUSH,
-          REHYDRATE,
-          PAUSE,
-          PERSIST,
-          PURGE,
-          REGISTER,
-        ],
-        ignoredPaths: ["socket.socket"], // ignore non-serializable socket
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
 });
 
 // --------------------------------------------------
-// EXPORT
+// PERSISTOR
 // --------------------------------------------------
 export const persistor = persistStore(store);
 export default store;

@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPosts } from "@/redux/postSlice";
 
 const CreatePost = ({ open, setOpen }) => {
-  const imageRef = useRef();
+  const imageRef = useRef(null);
   const dispatch = useDispatch();
 
   const [file, setFile] = useState(null);
@@ -26,17 +26,22 @@ const CreatePost = ({ open, setOpen }) => {
   // FILE CHANGE
   // ---------------------------------------
   const fileChangeHandler = async (e) => {
-    const uploadedFile = e.target.files?.[0];
-    if (!uploadedFile) return;
+    try {
+      const uploadedFile = e.target.files?.[0];
+      if (!uploadedFile) return;
 
-    if (!uploadedFile.type.startsWith("image/")) {
-      toast.error("Only image files are allowed");
-      return;
+      if (!uploadedFile.type.startsWith("image/")) {
+        toast.error("Only image files are allowed");
+        return;
+      }
+
+      setFile(uploadedFile);
+
+      const dataUrl = await readFileAsDataURL(uploadedFile);
+      setImagePreview(dataUrl);
+    } catch (error) {
+      toast.error("Failed to preview image");
     }
-
-    setFile(uploadedFile);
-    const dataUrl = await readFileAsDataURL(uploadedFile);
-    setImagePreview(dataUrl);
   };
 
   // ---------------------------------------
@@ -57,28 +62,25 @@ const CreatePost = ({ open, setOpen }) => {
     try {
       setLoading(true);
 
-      const res = await api.post("/post/addpost", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post("/post/addpost", formData);
 
       if (res.data.success) {
         const newPost = res.data.post;
 
-        // 🔥 FIX — update FEED correctly
-        dispatch(setPosts([newPost, ...posts]));
+        // update feed immediately
+        dispatch(setPosts([newPost, ...(posts || [])]));
 
-        toast.success("Post created successfully");
+        toast.success(res.data.message || "Post created successfully");
 
         // cleanup
         setCaption("");
         setImagePreview("");
         setFile(null);
-
         setOpen(false);
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      console.error("CREATE POST ERROR:", error);
+      toast.error(error?.response?.data?.message || error?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -92,6 +94,10 @@ const CreatePost = ({ open, setOpen }) => {
       setCaption("");
       setImagePreview("");
       setFile(null);
+
+      if (imageRef.current) {
+        imageRef.current.value = "";
+      }
     }
     setOpen(isOpen);
   };
@@ -106,7 +112,7 @@ const CreatePost = ({ open, setOpen }) => {
         {/* USER INFO */}
         <div className="flex gap-3 items-center">
           <Avatar>
-            <AvatarImage src={user?.profilePicture} alt="img" />
+            <AvatarImage src={user?.profilePicture} alt="profile" />
             <AvatarFallback>
               {user?.username?.charAt(0)?.toUpperCase() || "U"}
             </AvatarFallback>
@@ -147,7 +153,8 @@ const CreatePost = ({ open, setOpen }) => {
         />
 
         <Button
-          onClick={() => imageRef.current.click()}
+          type="button"
+          onClick={() => imageRef.current?.click()}
           className="w-fit mx-auto bg-[#0095F6] hover:bg-[#258bcf]"
         >
           Select from computer
@@ -156,12 +163,12 @@ const CreatePost = ({ open, setOpen }) => {
         {/* POST BUTTON */}
         {imagePreview &&
           (loading ? (
-            <Button className="w-full">
+            <Button disabled className="w-full">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Please wait
             </Button>
           ) : (
-            <Button onClick={createPostHandler} className="w-full">
+            <Button type="button" onClick={createPostHandler} className="w-full">
               Post
             </Button>
           ))}

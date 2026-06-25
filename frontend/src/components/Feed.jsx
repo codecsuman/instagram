@@ -3,7 +3,7 @@ import Posts from "./Posts";
 import useGetAllPost from "@/hooks/useGetAllPost";
 
 const Feed = () => {
-  // 🔥 Always load posts on feed mount
+  // fetch all posts when feed mounts
   useGetAllPost();
 
   return (

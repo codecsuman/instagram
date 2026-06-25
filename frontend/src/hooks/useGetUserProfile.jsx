@@ -1,9 +1,7 @@
-// src/hooks/useGetUserProfile.js
-
-import { setUserProfile } from "@/redux/authSlice";
-import api from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import api from "@/lib/api";
+import { setUserProfile } from "@/redux/authSlice";
 
 const useGetUserProfile = (userId) => {
   const dispatch = useDispatch();
@@ -25,20 +23,27 @@ const useGetUserProfile = (userId) => {
 
         const res = await api.get(`/user/${userId}/profile`);
 
-        if (isMounted && res.data.success) {
-          dispatch(setUserProfile(res.data.user));
+        if (!isMounted) return;
+
+        if (res.data.success) {
+          dispatch(setUserProfile(res.data.user || null));
+        } else {
+          dispatch(setUserProfile(null));
         }
       } catch (error) {
-        console.log("❌ Error loading user profile:", error);
-        if (isMounted) dispatch(setUserProfile(null));
+        if (!isMounted) return;
+
+        console.error("❌ Error loading user profile:", error);
+        dispatch(setUserProfile(null));
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUserProfile();
 
-    // Refetch profile when logged-in user changes (optional but correct)
     return () => {
       isMounted = false;
     };

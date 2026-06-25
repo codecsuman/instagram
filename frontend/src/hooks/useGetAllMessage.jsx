@@ -1,53 +1,62 @@
-// src/hooks/useGetAllMessage.js
-
-import { setMessages, setLoading, setError } from "@/redux/chatSlice";
-import api from "@/lib/api";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import api from "@/lib/api";
+import { setMessages, setLoading, setError } from "@/redux/chatSlice";
 
 const useGetAllMessage = () => {
   const dispatch = useDispatch();
   const { selectedChatUser } = useSelector((state) => state.chat);
 
   useEffect(() => {
-    // No user selected → clear chat
+    // If no user selected, clear messages
     if (!selectedChatUser?._id) {
       dispatch(setMessages([]));
+      dispatch(setError(null));
+      dispatch(setLoading(false));
       return;
     }
 
-    let isCancelled = false; // avoids updating state after unmount
-    const userId = selectedChatUser._id;
+    let isMounted = true;
 
-    const fetchAllMessage = async () => {
+    const fetchMessages = async () => {
       try {
         dispatch(setLoading(true));
+        dispatch(setError(null));
 
-        const res = await api.get(`/message/all/${userId}`);
+        const res = await api.get(`/message/all/${selectedChatUser._id}`);
 
-        if (!isCancelled) {
-          if (res.data.success) {
-            dispatch(setMessages(res.data.messages));
-          }
+        if (!isMounted) return;
+
+        if (res.data.success) {
+          dispatch(setMessages(res.data.messages || []));
+        } else {
+          dispatch(setMessages([]));
+          dispatch(setError(res.data.message || "Failed to fetch messages"));
         }
       } catch (error) {
-        if (!isCancelled) {
-          dispatch(setError(error?.response?.data?.message || "Failed to fetch messages"));
-        }
+        if (!isMounted) return;
+
+        dispatch(setMessages([]));
+        dispatch(
+          setError(
+            error?.response?.data?.message ||
+              error?.message ||
+              "Failed to fetch messages"
+          )
+        );
       } finally {
-        if (!isCancelled) {
+        if (isMounted) {
           dispatch(setLoading(false));
         }
       }
     };
 
-    fetchAllMessage();
+    fetchMessages();
 
-    // Cleanup for fast user switching
     return () => {
-      isCancelled = true;
+      isMounted = false;
     };
-  }, [selectedChatUser, dispatch]);
+  }, [selectedChatUser?._id, dispatch]);
 };
 
 export default useGetAllMessage;

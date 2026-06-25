@@ -1,35 +1,42 @@
-// src/hooks/useGetRTM.js
-
-import { addMessage } from "@/redux/chatSlice";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { addMessage } from "@/redux/chatSlice";
 
 const useGetRTM = (socket) => {
   const dispatch = useDispatch();
   const { selectedChatUser } = useSelector((state) => state.chat);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !selectedChatUser?._id) return;
 
-    // Handle new message ONLY if it belongs to the current chat
     const handleNewMessage = (message) => {
-      if (
-        selectedChatUser &&
-        (message.senderId === selectedChatUser._id ||
-          message.receiverId === selectedChatUser._id)
-      ) {
+      if (!message) return;
+
+      const senderId =
+        typeof message.senderId === "object"
+          ? message.senderId?._id
+          : message.senderId;
+
+      const receiverId =
+        typeof message.receiverId === "object"
+          ? message.receiverId?._id
+          : message.receiverId;
+
+      const belongsToCurrentChat =
+        senderId?.toString() === selectedChatUser._id.toString() ||
+        receiverId?.toString() === selectedChatUser._id.toString();
+
+      if (belongsToCurrentChat) {
         dispatch(addMessage(message));
       }
     };
 
-    // Register listener (safe)
     socket.on("newMessage", handleNewMessage);
 
-    // Cleanup on unmount or chat switch
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, selectedChatUser, dispatch]);
+  }, [socket, selectedChatUser?._id, dispatch]);
 };
 
 export default useGetRTM;

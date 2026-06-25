@@ -1,12 +1,13 @@
+// frontend/src/components/MainLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import LeftSidebar from "./LeftSidebar";
 import { useSelector } from "react-redux";
+import LeftSidebar from "./LeftSidebar";
 
 const MainLayout = () => {
   const { user } = useSelector((store) => store.auth);
 
-  // ⛑️ Prevent layout from rendering before user loads
+  // Optional safety while auth state hydrates
   if (user === undefined) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
@@ -17,25 +18,21 @@ const MainLayout = () => {
 
   return (
     <div className="w-full min-h-screen flex bg-white">
-
-      {/* FIXED LEFT SIDEBAR */}
+      {/* LEFT SIDEBAR */}
       <LeftSidebar />
 
       {/* MAIN CONTENT */}
-      <div
+      <main
         className="
           flex-1
           min-h-screen
-          relative
-          overflow-x-hidden
-          overflow-y-scroll
           ml-[250px]
-          max-w-full
+          overflow-x-hidden
+          bg-white
         "
       >
         <Outlet />
-      </div>
-
+      </main>
     </div>
   );
 };

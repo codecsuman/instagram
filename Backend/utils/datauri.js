@@ -1,18 +1,23 @@
+// Backend/utils/getDataUri.js
 import DataUriParser from "datauri/parser.js";
 import path from "path";
 
 const parser = new DataUriParser();
 
 const getDataUri = (file) => {
-  if (!file) return null;
+  try {
+    if (!file || !file.buffer) return null;
 
-  // Ensures extension exists — safest
-  const extension = path.extname(file.originalname || "").toLowerCase();
+    const originalName = file.originalname || "image.jpg";
+    const extension = path.extname(originalName).toLowerCase() || ".jpg";
 
-  // Default fallback (important)
-  const ext = extension || ".jpg";
+    const result = parser.format(extension, file.buffer);
 
-  return parser.format(ext, file.buffer).content;
+    return result.content || null;
+  } catch (error) {
+    console.error("❌ DataUri conversion error:", error.message);
+    return null;
+  }
 };
 
 export default getDataUri;

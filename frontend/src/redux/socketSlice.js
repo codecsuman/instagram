@@ -1,51 +1,44 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const initialState = {
+  socket: null,
+  onlineUsers: [],
+  isConnected: false,
+  socketId: null,
+  reconnectAttempts: 0,
+};
+
 const socketSlice = createSlice({
-  name: "socketio",
-
-  initialState: {
-    socket: null,          // ← actual socket instance
-    onlineUsers: [],       // ← online users from server
-    isConnected: false,    // ← socket connected flag
-    socketId: null,        // ← current socket ID
-    reconnectAttempts: 0,  // ← track reconnect tries (optional)
-  },
-
+  name: "socket",
+  initialState,
   reducers: {
-    // Save socket instance
     setSocket: (state, action) => {
       state.socket = action.payload;
     },
 
-    // Online users list
     setOnlineUsers: (state, action) => {
-      state.onlineUsers = action.payload || [];
+      state.onlineUsers = Array.isArray(action.payload) ? action.payload : [];
     },
 
-    // Connected or disconnected
     setSocketConnected: (state, action) => {
-      state.isConnected = action.payload;
+      state.isConnected = Boolean(action.payload);
     },
 
-    // Save socket ID
     setSocketId: (state, action) => {
-      state.socketId = action.payload;
+      state.socketId = action.payload || null;
     },
 
-    // Increase reconnect attempts
     incrementReconnectAttempts: (state) => {
       state.reconnectAttempts += 1;
     },
 
-    // Reset reconnect attempts
     resetReconnectAttempts: (state) => {
       state.reconnectAttempts = 0;
     },
 
-    // LOGOUT → Reset everything
     clearOnlineUsers: (state) => {
-      state.onlineUsers = [];
       state.socket = null;
+      state.onlineUsers = [];
       state.isConnected = false;
       state.socketId = null;
       state.reconnectAttempts = 0;

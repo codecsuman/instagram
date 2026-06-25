@@ -8,124 +8,167 @@ import { MessageCircleCode } from "lucide-react";
 import Messages from "./Messages";
 import api from "@/lib/api";
 import useGetRTM from "@/hooks/useGetRTM";
+import useGetAllMessage from "@/hooks/useGetAllMessage";
+import { toast } from "sonner";
 
 const ChatPage = () => {
   const [textMessage, setTextMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
   const dispatch = useDispatch();
 
   const user = useSelector((state) => state.auth.user);
-  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers);
+  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers || []);
   const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
-  const onlineUsers = useSelector((state) => state.socket.onlineUsers);
+  const onlineUsers = useSelector((state) => state.socket.onlineUsers || []);
 
-  // Pass your socket instance (from App.jsx) to hook
-  const socket = window.socketRef?.current;
+  // real socket comes from App.jsx
+  const socket = window._socket || null;
+
+  // fetch messages when selected user changes
+  useGetAllMessage();
+
+  // listen for real-time incoming messages
   useGetRTM(socket);
 
   // ------------------------------------------------
-  // SEND MESSAGE (socket + API)
+  // SEND MESSAGE
   // ------------------------------------------------
   const sendMessageHandler = async (receiverId) => {
-    if (!textMessage.trim()) return;
+    const trimmedMessage = textMessage.trim();
+    if (!trimmedMessage || !receiverId || sending) return;
 
     try {
+      setSending(true);
+
       const res = await api.post(`/message/send/${receiverId}`, {
-        textMessage,
+        textMessage: trimmedMessage,
       });
 
       if (res.data.success) {
-        // 1. Update my own chat instantly
+        // instantly update sender UI
         dispatch(addMessage(res.data.newMessage));
-
-        // 2. Emit message to receiver
-        socket?.emit("sendMessage", {
-          receiverId,
-          message: res.data.newMessage,
-        });
-
         setTextMessage("");
       }
     } catch (error) {
-      console.log("SEND ERR:", error);
+      console.error("SEND MESSAGE ERROR:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to send message"
+      );
+    } finally {
+      setSending(false);
     }
   };
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-screen w-full bg-white">
       {/* LEFT USER LIST */}
-      <section className="w-full md:w-1/4 my-8">
-        <h1 className="font-bold mb-4 px-3 text-xl">{user?.username}</h1>
-        <hr className="mb-4 border-gray-300" />
+      <section className="w-full md:w-[320px] border-r border-gray-300 flex flex-col">
+        <div className="px-4 py-4 border-b border-gray-300">
+          <h1 className="font-bold text-xl">{user?.username || "Messages"}</h1>
+        </div>
 
-        <div className="overflow-y-auto h-[80vh]">
-          {suggestedUsers.map((u) => {
-            const isOnline = onlineUsers.includes(u._id);
+        <div className="overflow-y-auto flex-1">
+          {suggestedUsers.length > 0 ? (
+            suggestedUsers.map((u) => {
+              const isOnline = onlineUsers.includes(u._id);
+              const isSelected = selectedChatUser?._id === u._id;
 
-            return (
-              <div
-                key={u._id}
-                onClick={() => dispatch(setSelectedChatUser(u))}
-                className="flex gap-3 items-center p-3 hover:bg-gray-50 cursor-pointer"
-              >
-                <Avatar className="w-14 h-14">
-                  <AvatarImage src={u.profilePicture} />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
+              return (
+                <div
+                  key={u._id}
+                  onClick={() => dispatch(setSelectedChatUser(u))}
+                  className={`flex gap-3 items-center p-3 cursor-pointer transition ${
+                    isSelected ? "bg-gray-100" : "hover:bg-gray-50"
+                  }`}
+                >
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={u.profilePicture} />
+                    <AvatarFallback>
+                      {u?.username?.charAt(0)?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="flex flex-col">
-                  <span className="font-medium">{u.username}</span>
-                  <span
-                    className={`text-xs font-bold ${
-                      isOnline ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {isOnline ? "online" : "offline"}
-                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium truncate">{u.username}</span>
+                    <span
+                      className={`text-xs font-medium ${
+                        isOnline ? "text-green-600" : "text-gray-500"
+                      }`}
+                    >
+                      {isOnline ? "online" : "offline"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="p-4 text-sm text-gray-500">No users available</div>
+          )}
         </div>
       </section>
 
       {/* RIGHT CHAT WINDOW */}
       {selectedChatUser ? (
-        <section className="flex-1 border-l border-gray-300 flex flex-col h-full">
+        <section className="flex-1 flex flex-col h-full">
           {/* TOP BAR */}
-          <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 bg-white sticky top-0 z-10">
+          <div className="flex gap-3 items-center px-4 py-3 border-b border-gray-300 bg-white sticky top-0 z-10">
             <Avatar>
               <AvatarImage src={selectedChatUser.profilePicture} />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarFallback>
+                {selectedChatUser?.username?.charAt(0)?.toUpperCase() || "U"}
+              </AvatarFallback>
             </Avatar>
 
-            <div>
-              <span>{selectedChatUser.username}</span>
+            <div className="flex flex-col">
+              <span className="font-medium">{selectedChatUser.username}</span>
+              <span className="text-xs text-gray-500">
+                {onlineUsers.includes(selectedChatUser._id)
+                  ? "online"
+                  : "offline"}
+              </span>
             </div>
           </div>
 
           {/* MESSAGES */}
-          <Messages selectedUser={selectedChatUser} />
+          <div className="flex-1 min-h-0">
+            <Messages selectedUser={selectedChatUser} />
+          </div>
 
           {/* INPUT BAR */}
-          <div className="flex items-center p-4 border-t border-gray-300">
+          <div className="flex items-center p-4 border-t border-gray-300 gap-2">
             <Input
               value={textMessage}
               onChange={(e) => setTextMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessageHandler(selectedChatUser._id);
+                }
+              }}
               type="text"
-              className="flex-1 mr-2 focus-visible:ring-transparent"
+              className="flex-1 focus-visible:ring-transparent"
               placeholder="Message..."
             />
-            <Button onClick={() => sendMessageHandler(selectedChatUser._id)}>
-              Send
+
+            <Button
+              onClick={() => sendMessageHandler(selectedChatUser._id)}
+              disabled={!textMessage.trim() || sending}
+            >
+              {sending ? "Sending..." : "Send"}
             </Button>
           </div>
         </section>
       ) : (
         /* EMPTY STATE */
-        <div className="flex flex-col items-center justify-center mx-auto">
-          <MessageCircleCode className="w-32 h-32 my-4" />
-          <h1 className="font-medium">Your messages</h1>
-          <span>Select someone to start chatting.</span>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <MessageCircleCode className="w-24 h-24 mb-4 text-gray-400" />
+          <h1 className="font-medium text-lg">Your messages</h1>
+          <span className="text-gray-500 text-sm">
+            Select someone to start chatting.
+          </span>
         </div>
       )}
     </div>

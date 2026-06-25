@@ -9,41 +9,41 @@ dayjs.extend(relativeTime);
 const Comment = ({ comment }) => {
   if (!comment) return null;
 
-  const {
-    author = {},
-    text = "",
-    createdAt,
-  } = comment;
+  const author = comment.author || {};
+  const text = comment.text || "";
+  const createdAt = comment.createdAt;
 
   const username = author.username || "Unknown";
   const profileImage = author.profilePicture || "";
+  const authorId = author._id || null;
   const fallback = username.charAt(0)?.toUpperCase() || "?";
 
   return (
     <div className="my-2">
       <div className="flex gap-3 items-start">
-
         <Avatar className="w-10 h-10">
           <AvatarImage src={profileImage} alt={username} />
           <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
 
         <div className="flex flex-col leading-tight break-words w-full">
+          {authorId ? (
+            <Link to={`/profile/${authorId}`}>
+              <span className="text-sm font-bold hover:underline">
+                {username}
+              </span>
+            </Link>
+          ) : (
+            <span className="text-sm font-bold">{username}</span>
+          )}
 
-          <Link to={`/profile/${author._id}`}>
-            <span className="text-sm font-bold hover:underline">
-              {username}
-            </span>
-          </Link>
-
-          <span className="text-sm text-gray-700 whitespace-pre-wrap">
+          <span className="text-sm text-gray-700 whitespace-pre-wrap break-words">
             {text}
           </span>
 
           <span className="text-xs text-gray-500 mt-1">
             {createdAt ? dayjs(createdAt).fromNow() : ""}
           </span>
-
         </div>
       </div>
     </div>

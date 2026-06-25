@@ -1,39 +1,65 @@
+// Backend/middlewares/multer.js
 import multer from "multer";
 
-// In-memory storage for Cloudinary uploads
+// ---------------------------------------------
+// IN-MEMORY STORAGE (best for Cloudinary upload)
+// ---------------------------------------------
 const storage = multer.memoryStorage();
 
-// Allowed file types
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+// ---------------------------------------------
+// ALLOWED FILE TYPES
+// ---------------------------------------------
+const ALLOWED_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+];
 
+// ---------------------------------------------
+// MULTER INSTANCE
+// ---------------------------------------------
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
   fileFilter: (req, file, cb) => {
+    if (!file) {
+      return cb(null, true);
+    }
+
     if (ALLOWED_TYPES.includes(file.mimetype)) {
       return cb(null, true);
     }
-    return cb(new Error("Only PNG, JPG, JPEG, and WEBP formats are allowed"));
+
+    return cb(
+      new Error("Only PNG, JPG, JPEG, and WEBP image files are allowed")
+    );
   },
 });
 
-// ⭐ Global Multer Error Handler
+// ---------------------------------------------
+// OPTIONAL GLOBAL MULTER ERROR HANDLER
+// Use this in routes only if you want explicit upload error handling
+// ---------------------------------------------
 export const uploadErrorHandler = (err, req, res, next) => {
+  if (!err) return next();
+
   if (err instanceof multer.MulterError) {
-    // Multer built-in errors
     return res.status(400).json({
       success: false,
-      message: err.message,
-    });
-  } else if (err) {
-    // Custom fileFilter errors
-    return res.status(400).json({
-      success: false,
-      message: err.message || "File upload failed",
+      message:
+        err.code === "LIMIT_FILE_SIZE"
+          ? "Image size must be less than 5MB"
+          : err.message,
     });
   }
-  next();
+
+  return res.status(400).json({
+    success: false,
+    message: err.message || "File upload failed",
+  });
 };
 
 export default upload;
-

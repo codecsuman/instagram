@@ -1,26 +1,20 @@
+// frontend/src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+
 import App from "./App.jsx";
 import "./index.css";
-
 import { Toaster } from "./components/ui/sonner.jsx";
-
-// Redux
-import { Provider } from "react-redux";
-import store from "./redux/store.js";
-
-// Persist
-import { PersistGate } from "redux-persist/integration/react";
-import { persistStore } from "redux-persist";
-
-const persistor = persistStore(store);
+import store, { persistor } from "./redux/store.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <App />
-        <Toaster />
+        <Toaster richColors position="top-right" />
       </PersistGate>
     </Provider>
   </React.StrictMode>

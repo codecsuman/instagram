@@ -7,13 +7,11 @@ const commentSchema = new mongoose.Schema(
       required: [true, "Comment text is required"],
       trim: true,
     },
-
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
     post: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Post",
@@ -24,7 +22,6 @@ const commentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Additional Indexes for optimization
 commentSchema.index({ author: 1, createdAt: -1 });
 commentSchema.index({ post: 1, createdAt: -1 });
 

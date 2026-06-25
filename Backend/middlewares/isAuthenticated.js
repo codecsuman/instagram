@@ -1,3 +1,4 @@
+// Backend/middlewares/isAuthenticated.js
 import jwt from "jsonwebtoken";
 
 const isAuthenticated = (req, res, next) => {
@@ -11,24 +12,23 @@ const isAuthenticated = (req, res, next) => {
       });
     }
 
-    // Verify JWT
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-    if (!decoded) {
+    if (!decoded?.userId) {
       return res.status(401).json({
         success: false,
         message: "Invalid token",
       });
     }
 
-    // IMPORTANT: All your controllers expect req.id
     req.id = decoded.userId;
-
     next();
   } catch (error) {
+    console.error("AUTH MIDDLEWARE ERROR:", error.message);
+
     return res.status(401).json({
       success: false,
-      message: "Authentication error: Invalid or expired token",
+      message: "Authentication failed. Please login again.",
     });
   }
 };

@@ -1,41 +1,37 @@
+// frontend/src/lib/api.js
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL?.trim() || "http://localhost:5000";
 
 const api = axios.create({
-  baseURL: `${API_URL}/api/v1`,
-  withCredentials: true,
-  timeout: 10000,
+  baseURL: `${API_BASE_URL}/api/v1`,
+  withCredentials: true, // required for cookie-based auth
+  timeout: 15000,
 });
 
-// Add token automatically
-api.interceptors.request.use((config) => {
-  const persisted = localStorage.getItem("persist:root");
-
-  if (persisted) {
-    const parsed = JSON.parse(persisted);
-    const auth = parsed.auth ? JSON.parse(parsed.auth) : null;
-
-    if (auth?.token) {
-      config.headers.Authorization = `Bearer ${auth.token}`;
-    }
-  }
-
-  return config;
-});
-
-// Auto redirect on 401
+// -----------------------------
+// RESPONSE INTERCEPTOR
+// -----------------------------
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err?.response?.status === 401) {
-      // clear redux persist properly
-      localStorage.removeItem("persist:root");
-      localStorage.removeItem("token");
-
-      window.location.href = "/login";
+  (response) => response,
+  (error) => {
+    // network / backend down / CORS / timeout
+    if (!error.response) {
+      console.error("❌ API Network Error:", error.message);
+      return Promise.reject({
+        ...error,
+        message:
+          "Unable to connect to the server. Please check backend deployment or your internet connection.",
+      });
     }
-    return Promise.reject(err);
+
+    // auth failure
+    if (error.response.status === 401) {
+      console.warn("⚠️ Unauthorized request");
+    }
+
+    return Promise.reject(error);
   }
 );
 

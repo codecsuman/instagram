@@ -5,7 +5,6 @@ import RightSidebar from "./RightSidebar";
 const Home = () => {
   return (
     <div className="flex w-full justify-center">
-      
       {/* FEED SECTION */}
       <div className="flex-grow max-w-2xl">
         <Feed />
@@ -15,7 +14,6 @@ const Home = () => {
       <div className="hidden lg:block w-[350px]">
         <RightSidebar />
       </div>
-
     </div>
   );
 };

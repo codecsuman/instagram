@@ -1,10 +1,10 @@
-// message.controller.js
+// Backend/controllers/message.controller.js
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
 import { getReceiverSocketIds, io } from "../socket/socket.js";
 
 /* --------------------------------------------------------
-   SEND MESSAGE (REAL-TIME + DB)
+   SEND MESSAGE (SAVE + REAL-TIME)
 -------------------------------------------------------- */
 export const sendMessage = async (req, res) => {
   try {
@@ -12,16 +12,25 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.params.id;
     const { textMessage } = req.body;
 
-    if (!textMessage || textMessage.trim() === "") {
+    if (!receiverId) {
+      return res.status(400).json({
+        success: false,
+        message: "Receiver id is required",
+      });
+    }
+
+    if (!textMessage?.trim()) {
       return res.status(400).json({
         success: false,
         message: "Message cannot be empty",
       });
     }
 
-    /* -----------------------------------------
-       FIND OR CREATE CONVERSATION
-    -------------------------------------------- */
+    const cleanMessage = textMessage.trim();
+
+    // -----------------------------------------
+    // FIND OR CREATE CONVERSATION
+    // -----------------------------------------
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });
@@ -33,56 +42,60 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    /* -----------------------------------------
-       CREATE MESSAGE
-    -------------------------------------------- */
+    // -----------------------------------------
+    // CREATE MESSAGE
+    // IMPORTANT: conversationId added here
+    // -----------------------------------------
     let newMessage = await Message.create({
+      conversationId: conversation._id,
       senderId,
       receiverId,
-      message: textMessage,
+      message: cleanMessage,
     });
 
     // populate sender info for frontend UI
-    newMessage = await newMessage.populate(
+    newMessage = await Message.findById(newMessage._id).populate(
       "senderId",
       "username profilePicture"
     );
 
-    /* -----------------------------------------
-       SAVE MESSAGE IN CONVERSATION
-    -------------------------------------------- */
+    // -----------------------------------------
+    // SAVE MESSAGE IN CONVERSATION
+    // -----------------------------------------
     conversation.messages.push(newMessage._id);
+    conversation.lastMessage = newMessage._id;
     await conversation.save();
 
-    /* -----------------------------------------
-       SOCKET.IO EMIT (REAL-TIME)
-    -------------------------------------------- */
+    // -----------------------------------------
+    // SOCKET.IO REAL-TIME EMIT
+    // -----------------------------------------
 
-    // 🔥 Send to receiver (all devices)
+    // send to receiver (all devices)
     const receiverSockets = getReceiverSocketIds(receiverId);
     receiverSockets.forEach((sockId) => {
       io.to(sockId).emit("newMessage", newMessage);
     });
 
-    // 🔥 Also update sender screen instantly
+    // also send to sender's own active devices so chat updates instantly
     const senderSockets = getReceiverSocketIds(senderId);
     senderSockets.forEach((sockId) => {
       io.to(sockId).emit("newMessage", newMessage);
     });
 
-    /* -----------------------------------------
-       RESPONSE
-    -------------------------------------------- */
+    // -----------------------------------------
+    // RESPONSE
+    // -----------------------------------------
     return res.status(201).json({
       success: true,
+      message: "Message sent successfully",
       newMessage,
     });
   } catch (error) {
-    console.log("SEND MESSAGE ERROR:", error);
+    console.error("SEND MESSAGE ERROR:", error.message);
     return res.status(500).json({
       success: false,
       message: "Failed to send message",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -95,12 +108,22 @@ export const getMessage = async (req, res) => {
     const senderId = req.id;
     const receiverId = req.params.id;
 
+    if (!receiverId) {
+      return res.status(400).json({
+        success: false,
+        message: "Receiver id is required",
+      });
+    }
+
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     }).populate({
       path: "messages",
-      options: { sort: { createdAt: 1 } }, // oldest → newest
-      populate: { path: "senderId", select: "username profilePicture" },
+      options: { sort: { createdAt: 1 } },
+      populate: {
+        path: "senderId",
+        select: "username profilePicture",
+      },
     });
 
     return res.status(200).json({
@@ -108,11 +131,11 @@ export const getMessage = async (req, res) => {
       messages: conversation ? conversation.messages : [],
     });
   } catch (error) {
-    console.log("GET MESSAGE ERROR:", error);
+    console.error("GET MESSAGE ERROR:", error.message);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch messages",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
