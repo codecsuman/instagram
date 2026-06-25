@@ -8,7 +8,7 @@ import { Badge } from "./ui/badge";
 import { AtSign, Heart, MessageCircle } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { setUserProfile } from "@/redux/authSlice";
+import { setAuthUser, setUserProfile } from "@/redux/authSlice";
 import { setSelectedChatUser } from "@/redux/chatSlice";
 
 const Profile = () => {
@@ -30,12 +30,19 @@ const Profile = () => {
     );
   }
 
-  const isLoggedInUserProfile = user?._id?.toString() === userProfile?._id?.toString();
+  const isLoggedInUserProfile =
+    user?._id?.toString() === userProfile?._id?.toString();
 
   const posts = Array.isArray(userProfile?.posts) ? userProfile.posts : [];
-  const bookmarks = Array.isArray(userProfile?.bookmarks) ? userProfile.bookmarks : [];
-  const followers = Array.isArray(userProfile?.followers) ? userProfile.followers : [];
-  const following = Array.isArray(userProfile?.following) ? userProfile.following : [];
+  const bookmarks = Array.isArray(userProfile?.bookmarks)
+    ? userProfile.bookmarks
+    : [];
+  const followers = Array.isArray(userProfile?.followers)
+    ? userProfile.followers
+    : [];
+  const following = Array.isArray(userProfile?.following)
+    ? userProfile.following
+    : [];
 
   const isFollowing = useMemo(() => {
     return followers.some((id) => id.toString() === user?._id?.toString());
@@ -58,25 +65,27 @@ const Profile = () => {
       if (res.data.success) {
         toast.success(res.data.message);
 
-        let updatedFollowers;
-        if (isFollowing) {
-          updatedFollowers = followers.filter(
-            (id) => id.toString() !== user?._id?.toString()
-          );
-        } else {
-          updatedFollowers = [...followers, user?._id];
-        }
-
+        // 1) update visited profile followers
         dispatch(
           setUserProfile({
             ...userProfile,
-            followers: updatedFollowers,
+            followers: res.data.targetUserFollowers || [],
+          })
+        );
+
+        // 2) update logged-in user's following list
+        dispatch(
+          setAuthUser({
+            ...user,
+            following: res.data.currentUserFollowing || [],
           })
         );
       }
     } catch (error) {
       console.error("FOLLOW ERROR:", error);
-      toast.error("Something went wrong");
+      toast.error(
+        error?.response?.data?.message || "Something went wrong"
+      );
     }
   };
 
@@ -103,7 +112,10 @@ const Profile = () => {
           {/* Avatar */}
           <section className="flex items-center justify-center md:justify-start">
             <Avatar className="h-32 w-32">
-              <AvatarImage src={userProfile?.profilePicture || ""} alt="profile" />
+              <AvatarImage
+                src={userProfile?.profilePicture || ""}
+                alt="profile"
+              />
               <AvatarFallback>
                 {userProfile?.username?.charAt(0)?.toUpperCase() || "U"}
               </AvatarFallback>
@@ -113,7 +125,9 @@ const Profile = () => {
           {/* Profile Details */}
           <section className="flex flex-col gap-5">
             <div className="flex items-center gap-4 flex-wrap">
-              <span className="text-xl font-semibold">{userProfile.username}</span>
+              <span className="text-xl font-semibold">
+                {userProfile.username}
+              </span>
 
               {isLoggedInUserProfile ? (
                 <Link to="/account/edit">
@@ -165,16 +179,20 @@ const Profile = () => {
                 <span className="font-semibold">{posts.length}</span> posts
               </p>
               <p>
-                <span className="font-semibold">{followers.length}</span> followers
+                <span className="font-semibold">{followers.length}</span>{" "}
+                followers
               </p>
               <p>
-                <span className="font-semibold">{following.length}</span> following
+                <span className="font-semibold">{following.length}</span>{" "}
+                following
               </p>
             </div>
 
             {/* Bio */}
             <div>
-              <p className="font-semibold">{userProfile?.bio || "No bio yet."}</p>
+              <p className="font-semibold">
+                {userProfile?.bio || "No bio yet."}
+              </p>
 
               <Badge variant="secondary" className="w-fit mt-2">
                 <AtSign className="mr-1 h-4 w-4" />
@@ -220,13 +238,12 @@ const Profile = () => {
 
             {displayedPosts.map((post) => {
               const likes = Array.isArray(post?.likes) ? post.likes : [];
-              const comments = Array.isArray(post?.comments) ? post.comments : [];
+              const comments = Array.isArray(post?.comments)
+                ? post.comments
+                : [];
 
               return (
-                <div
-                  key={post._id}
-                  className="relative group cursor-pointer"
-                >
+                <div key={post._id} className="relative group cursor-pointer">
                   <img
                     src={post.image}
                     alt="post"

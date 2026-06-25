@@ -1,4 +1,3 @@
-// Backend/controllers/user.controller.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -38,7 +37,7 @@ const buildUserResponse = (user, posts = []) => ({
   email: user.email,
   profilePicture: user.profilePicture || "",
   bio: user.bio || "",
-  gender: user.gender || "",
+  gender: user.gender || "other",
   followers: user.followers || [],
   following: user.following || [],
   bookmarks: user.bookmarks || [],
@@ -60,7 +59,7 @@ export const register = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const normalizedUsername = username.trim();
+    const normalizedUsername = username.trim().toLowerCase();
 
     const existingUser = await User.findOne({
       $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
@@ -69,9 +68,10 @@ export const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: existingUser.email === normalizedEmail
-          ? "Email already in use"
-          : "Username already taken",
+        message:
+          existingUser.email === normalizedEmail
+            ? "Email already in use"
+            : "Username already taken",
       });
     }
 
@@ -86,7 +86,7 @@ export const register = async (req, res) => {
       bookmarks: [],
       posts: [],
       bio: "",
-      gender: "",
+      gender: "other",
       profilePicture: "",
     });
 
@@ -119,7 +119,6 @@ export const login = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // password is select:false in schema
     const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
     if (!user) {
@@ -252,10 +251,14 @@ export const editProfile = async (req, res) => {
     }
 
     if (typeof bio !== "undefined") {
-      user.bio = bio;
+      user.bio = bio.trim();
     }
 
-    if (typeof gender !== "undefined") {
+    if (
+      typeof gender !== "undefined" &&
+      gender !== "" &&
+      ["male", "female", "other"].includes(gender)
+    ) {
       user.gender = gender;
     }
 
@@ -323,8 +326,8 @@ export const getSuggestedUsers = async (req, res) => {
 // --------------------------------------------------
 export const followOrUnfollow = async (req, res) => {
   try {
-    const followerId = req.id;
-    const targetId = req.params.id;
+    const followerId = req.id;       // logged in user
+    const targetId = req.params.id;  // profile being followed/unfollowed
 
     if (!targetId) {
       return res.status(400).json({
@@ -356,26 +359,31 @@ export const followOrUnfollow = async (req, res) => {
       (id) => String(id) === String(targetId)
     );
 
+    let action = "";
+
     if (isFollowing) {
       currentUser.following.pull(targetId);
       targetUser.followers.pull(followerId);
-
-      await Promise.all([currentUser.save(), targetUser.save()]);
-
-      return res.status(200).json({
-        success: true,
-        message: "Unfollowed successfully",
-      });
+      action = "unfollow";
+    } else {
+      currentUser.following.push(targetId);
+      targetUser.followers.push(followerId);
+      action = "follow";
     }
-
-    currentUser.following.push(targetId);
-    targetUser.followers.push(followerId);
 
     await Promise.all([currentUser.save(), targetUser.save()]);
 
     return res.status(200).json({
       success: true,
-      message: "Followed successfully",
+      action,
+      message:
+        action === "follow"
+          ? "Followed successfully"
+          : "Unfollowed successfully",
+
+      // 🔥 IMPORTANT: send updated arrays for frontend state sync
+      currentUserFollowing: currentUser.following,
+      targetUserFollowers: targetUser.followers,
     });
   } catch (error) {
     console.error("FOLLOW/UNFOLLOW ERROR:", error.message);

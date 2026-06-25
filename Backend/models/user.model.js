@@ -76,11 +76,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/* --------------------------------------
-   INDEXES
---------------------------------------- */
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// only keep text index if you want search by username/bio
 userSchema.index({ username: "text", bio: "text" });
 
 export const User = mongoose.model("User", userSchema);

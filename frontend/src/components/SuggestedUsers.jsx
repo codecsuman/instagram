@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { setSuggestedUsers } from "@/redux/authSlice";
+import { setAuthUser, setSuggestedUsers } from "@/redux/authSlice";
 
 const SuggestedUsers = () => {
   const dispatch = useDispatch();
@@ -18,7 +18,7 @@ const SuggestedUsers = () => {
   }, [suggestedUsers, user?._id]);
 
   // --------------------------------------------------
-  // FOLLOW / UNFOLLOW
+  // FOLLOW HANDLER
   // --------------------------------------------------
   const followHandler = async (id) => {
     if (!id || loadingId) return;
@@ -31,11 +31,28 @@ const SuggestedUsers = () => {
       if (res.data.success) {
         toast.success(res.data.message || "Action completed");
 
-        // remove user from suggestion list after follow
-        const updatedUsers = suggestedUsers.filter((u) => u._id !== id);
-        dispatch(setSuggestedUsers(updatedUsers));
+        // --------------------------------------------
+        // 1) Update logged-in user's following list
+        // --------------------------------------------
+        if (Array.isArray(res.data.currentUserFollowing)) {
+          dispatch(
+            setAuthUser({
+              ...user,
+              following: res.data.currentUserFollowing,
+            })
+          );
+        }
+
+        // --------------------------------------------
+        // 2) Remove only when action = follow
+        // --------------------------------------------
+        if (res.data.action === "follow") {
+          const updatedUsers = suggestedUsers.filter((u) => u._id !== id);
+          dispatch(setSuggestedUsers(updatedUsers));
+        }
       }
     } catch (error) {
+      console.error("FOLLOW SUGGESTION ERROR:", error);
       toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
       setLoadingId(null);

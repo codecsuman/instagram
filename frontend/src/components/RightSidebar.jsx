@@ -3,9 +3,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import SuggestedUsers from "./SuggestedUsers";
+import useGetSuggestedUsers from "@/hooks/useGetSuggestedUsers";
 
 const RightSidebar = () => {
   const { user } = useSelector((store) => store.auth);
+
+  // 🔥 fetch suggested users when sidebar loads
+  useGetSuggestedUsers();
 
   // prevent render before auth is restored
   if (!user?._id) return null;
