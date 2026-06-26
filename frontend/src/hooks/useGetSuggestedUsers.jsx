@@ -5,26 +5,27 @@ import { setSuggestedUsers } from "@/redux/authSlice";
 
 const useGetSuggestedUsers = () => {
   const dispatch = useDispatch();
-  const { user, suggestedUsers } = useSelector((state) => state.auth);
+  const userId = useSelector((state) => state.auth.user?._id);
+  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers);
 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // if no logged-in user, clear suggestions
-    if (!user?._id) {
+    if (!userId) {
       dispatch(setSuggestedUsers([]));
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchSuggestedUsers = async () => {
       try {
         setLoading(true);
 
-        const res = await api.get("/user/suggested");
-
-        if (!isMounted) return;
+        const res = await api.get("/user/suggested", {
+          signal: controller.signal,
+        });
 
         if (res.data.success) {
           dispatch(setSuggestedUsers(res.data.users || []));
@@ -32,23 +33,22 @@ const useGetSuggestedUsers = () => {
           dispatch(setSuggestedUsers([]));
         }
       } catch (error) {
-        if (!isMounted) return;
-
+        if (error.name === "CanceledError" || error.name === "AbortError") {
+          return; // request was cancelled on unmount, not a real error
+        }
         console.error("❌ Error loading suggested users:", error);
         dispatch(setSuggestedUsers([]));
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchSuggestedUsers();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [dispatch, user?._id]);
+  }, [dispatch, userId]);
 
   return { loading, suggestedUsers };
 };

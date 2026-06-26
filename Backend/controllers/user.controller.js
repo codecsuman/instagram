@@ -366,12 +366,29 @@ export const followOrUnfollow = async (req, res) => {
       targetUser.followers.pull(followerId);
       action = "unfollow";
     } else {
-      currentUser.following.push(targetId);
-      targetUser.followers.push(followerId);
+      // addToSet prevents duplicate ObjectIds (e.g. double-click, retry, race condition)
+      currentUser.following.addToSet(targetId);
+      targetUser.followers.addToSet(followerId);
       action = "follow";
     }
 
     await Promise.all([currentUser.save(), targetUser.save()]);
+
+    // Re-use the already-loaded documents instead of issuing fresh findById
+    // queries — just populate posts on what we already have in memory.
+    const postPopulateOptions = {
+      path: "posts",
+      options: { sort: { createdAt: -1 } },
+      populate: {
+        path: "author",
+        select: "username profilePicture",
+      },
+    };
+
+    await Promise.all([
+      currentUser.populate(postPopulateOptions),
+      targetUser.populate(postPopulateOptions),
+    ]);
 
     return res.status(200).json({
       success: true,
@@ -381,9 +398,9 @@ export const followOrUnfollow = async (req, res) => {
           ? "Followed successfully"
           : "Unfollowed successfully",
 
-      // 🔥 IMPORTANT: send updated arrays for frontend state sync
-      currentUserFollowing: currentUser.following,
-      targetUserFollowers: targetUser.followers,
+      // 🔥 IMPORTANT: send full updated user objects for frontend state sync
+      currentUser,
+      targetUser,
     });
   } catch (error) {
     console.error("FOLLOW/UNFOLLOW ERROR:", error.message);

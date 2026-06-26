@@ -16,22 +16,17 @@ const Profile = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // This hook owns the fetch + loading state for the visited profile
   useGetUserProfile(userId);
 
   const [activeTab, setActiveTab] = useState("posts");
 
-  const { userProfile, user } = useSelector((store) => store.auth);
-
-  if (!userProfile) {
-    return (
-      <div className="flex justify-center mt-20">
-        <div className="animate-pulse h-40 w-40 bg-gray-200 rounded-full" />
-      </div>
-    );
-  }
-
-  const isLoggedInUserProfile =
-    user?._id?.toString() === userProfile?._id?.toString();
+  // -----------------------------------------------------------------
+  // EVERY HOOK LIVES HERE, ABOVE ANY CONDITIONAL RETURN.
+  // -----------------------------------------------------------------
+  const { userProfile, user, profileLoading } = useSelector(
+    (store) => store.auth
+  );
 
   const posts = Array.isArray(userProfile?.posts) ? userProfile.posts : [];
   const bookmarks = Array.isArray(userProfile?.bookmarks)
@@ -43,6 +38,9 @@ const Profile = () => {
   const following = Array.isArray(userProfile?.following)
     ? userProfile.following
     : [];
+
+  const isLoggedInUserProfile =
+    user?._id?.toString() === userProfile?._id?.toString();
 
   const isFollowing = useMemo(() => {
     return followers.some((id) => id.toString() === user?._id?.toString());
@@ -58,6 +56,9 @@ const Profile = () => {
   // ---------------------------------------------------
   // FOLLOW / UNFOLLOW
   // ---------------------------------------------------
+  // The backend response now returns the updated `currentUser` and
+  // `targetUser` objects directly, so we dispatch both straight from
+  // the response instead of re-fetching the profile separately.
   const followHandler = async () => {
     try {
       const res = await api.post(`/user/followorunfollow/${userProfile._id}`);
@@ -65,27 +66,17 @@ const Profile = () => {
       if (res.data.success) {
         toast.success(res.data.message);
 
-        // 1) update visited profile followers
-        dispatch(
-          setUserProfile({
-            ...userProfile,
-            followers: res.data.targetUserFollowers || [],
-          })
-        );
+        if (res.data.currentUser) {
+          dispatch(setAuthUser(res.data.currentUser));
+        }
 
-        // 2) update logged-in user's following list
-        dispatch(
-          setAuthUser({
-            ...user,
-            following: res.data.currentUserFollowing || [],
-          })
-        );
+        if (res.data.targetUser) {
+          dispatch(setUserProfile(res.data.targetUser));
+        }
       }
     } catch (error) {
       console.error("FOLLOW ERROR:", error);
-      toast.error(
-        error?.response?.data?.message || "Something went wrong"
-      );
+      toast.error(error?.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -103,6 +94,25 @@ const Profile = () => {
 
     navigate("/chat");
   };
+
+  // -----------------------------------------------------------------
+  // CONDITIONAL RETURNS COME AFTER EVERY HOOK, NEVER BEFORE.
+  // -----------------------------------------------------------------
+  if (profileLoading) {
+    return (
+      <div className="flex justify-center mt-20">
+        <div className="animate-pulse h-40 w-40 bg-gray-200 rounded-full" />
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="flex justify-center mt-20 text-gray-500">
+        User not found.
+      </div>
+    );
+  }
 
   return (
     <div className="flex max-w-5xl mx-auto px-4 md:px-10">

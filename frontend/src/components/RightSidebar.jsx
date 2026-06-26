@@ -6,10 +6,8 @@ import SuggestedUsers from "./SuggestedUsers";
 import useGetSuggestedUsers from "@/hooks/useGetSuggestedUsers";
 
 const RightSidebar = () => {
-  const { user } = useSelector((store) => store.auth);
-
-  // 🔥 fetch suggested users when sidebar loads
-  useGetSuggestedUsers();
+  const user = useSelector((state) => state.auth.user);
+  const { loading } = useGetSuggestedUsers();
 
   // prevent render before auth is restored
   if (!user?._id) return null;
@@ -46,14 +44,18 @@ const RightSidebar = () => {
           </Link>
 
           <span className="text-gray-500 text-xs line-clamp-2">
-            {user.bio?.trim() || "No bio yet"}
+            {user.bio?.trim() || "Sharing photos and moments ✨"}
           </span>
         </div>
       </div>
 
       {/* SUGGESTED USERS */}
       <div className="mt-8">
-        <SuggestedUsers />
+        {loading ? (
+          <p className="text-sm text-gray-400">Loading suggestions...</p>
+        ) : (
+          <SuggestedUsers />
+        )}
       </div>
     </div>
   );

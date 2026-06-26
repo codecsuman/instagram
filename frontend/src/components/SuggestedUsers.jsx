@@ -8,52 +8,54 @@ import { setAuthUser, setSuggestedUsers } from "@/redux/authSlice";
 
 const SuggestedUsers = () => {
   const dispatch = useDispatch();
-  const { suggestedUsers = [], user } = useSelector((store) => store.auth);
+  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers) || [];
+  const user = useSelector((state) => state.auth.user);
 
   const [loadingId, setLoadingId] = useState(null);
 
-  // remove logged-in user from suggestions
   const filteredUsers = useMemo(() => {
     return suggestedUsers.filter((u) => u?._id && u._id !== user?._id);
   }, [suggestedUsers, user?._id]);
 
   // --------------------------------------------------
-  // FOLLOW HANDLER
+  // FOLLOW HANDLER — optimistic: remove the card instantly,
+  // only roll back if the request actually fails. This is
+  // what makes the sidebar feel "real-time" without a refetch.
   // --------------------------------------------------
   const followHandler = async (id) => {
     if (!id || loadingId) return;
 
-    try {
-      setLoadingId(id);
+    const previousUsers = suggestedUsers;
+    setLoadingId(id);
 
+    dispatch(setSuggestedUsers(suggestedUsers.filter((u) => u._id !== id)));
+
+    try {
       const res = await api.post(`/user/followorunfollow/${id}`);
 
       if (res.data.success) {
         toast.success(res.data.message || "Action completed");
 
-        // --------------------------------------------
-        // 1) Update logged-in user's following list
-        // --------------------------------------------
-        if (Array.isArray(res.data.currentUserFollowing)) {
-          dispatch(
-            setAuthUser({
-              ...user,
-              following: res.data.currentUserFollowing,
-            })
-          );
+        // Full replace of the logged-in user's data — this is what
+        // keeps RightSidebar's mini profile card and Profile.jsx's
+        // following-count both correct without extra requests.
+        if (res.data.currentUser) {
+          dispatch(setAuthUser(res.data.currentUser));
         }
 
-        // --------------------------------------------
-        // 2) Remove only when action = follow
-        // --------------------------------------------
-        if (res.data.action === "follow") {
-          const updatedUsers = suggestedUsers.filter((u) => u._id !== id);
-          dispatch(setSuggestedUsers(updatedUsers));
+        // Defensive: suggestions only ever show non-followed users,
+        // so this branch should always be "follow" — but if the
+        // backend ever reports "unfollow" here, restore the card.
+        if (res.data.action === "unfollow") {
+          dispatch(setSuggestedUsers(previousUsers));
         }
+      } else {
+        dispatch(setSuggestedUsers(previousUsers));
       }
     } catch (error) {
       console.error("FOLLOW SUGGESTION ERROR:", error);
       toast.error(error?.response?.data?.message || "Something went wrong");
+      dispatch(setSuggestedUsers(previousUsers)); // rollback
     } finally {
       setLoadingId(null);
     }
@@ -69,7 +71,6 @@ const SuggestedUsers = () => {
 
   return (
     <div className="mt-6">
-      {/* HEADER */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-semibold text-sm text-gray-600">
           Suggested for you
@@ -79,14 +80,9 @@ const SuggestedUsers = () => {
         </span>
       </div>
 
-      {/* USERS */}
       <div className="flex flex-col gap-4">
         {filteredUsers.map((u) => (
-          <div
-            key={u._id}
-            className="flex items-center justify-between gap-3"
-          >
-            {/* LEFT SIDE */}
+          <div key={u._id} className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <Link to={`/profile/${u._id}`}>
                 <Avatar className="w-10 h-10">
@@ -104,14 +100,12 @@ const SuggestedUsers = () => {
                 >
                   {u.username}
                 </Link>
-
                 <p className="text-xs text-gray-500 truncate max-w-[150px]">
                   {u.bio?.trim() || "Suggested for you"}
                 </p>
               </div>
             </div>
 
-            {/* RIGHT SIDE */}
             <button
               type="button"
               onClick={() => followHandler(u._id)}

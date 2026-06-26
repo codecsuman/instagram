@@ -1,6 +1,7 @@
 import React from "react";
 import Feed from "./Feed";
 import RightSidebar from "./RightSidebar";
+import SuggestedUsers from "./SuggestedUsers";
 
 const Home = () => {
   return (
@@ -11,8 +12,11 @@ const Home = () => {
       </div>
 
       {/* RIGHT SIDEBAR */}
-      <div className="hidden lg:block w-[350px]">
-        <RightSidebar />
+      <div className="hidden lg:block w-[350px] sticky top-6 self-start">
+        <div className="flex flex-col gap-6">
+          <RightSidebar />
+          <SuggestedUsers />
+        </div>
       </div>
     </div>
   );

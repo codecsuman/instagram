@@ -4,48 +4,20 @@ const initialState = {
   user: null,
   suggestedUsers: [],
   userProfile: null,
+  selectedUserForProfile: null,
 };
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // --------------------------------------
-    // SET LOGGED-IN USER
-    // --------------------------------------
+    // -----------------------------
+    // Logged-in User
+    // -----------------------------
     setAuthUser: (state, action) => {
       state.user = action.payload || null;
     },
 
-    // --------------------------------------
-    // LOGOUT / RESET AUTH STATE
-    // --------------------------------------
-    logoutUser: (state) => {
-      state.user = null;
-      state.suggestedUsers = [];
-      state.userProfile = null;
-    },
-
-    // --------------------------------------
-    // SET SUGGESTED USERS
-    // --------------------------------------
-    setSuggestedUsers: (state, action) => {
-      state.suggestedUsers = Array.isArray(action.payload)
-        ? action.payload
-        : [];
-    },
-
-    // --------------------------------------
-    // SET CURRENT PROFILE PAGE USER
-    // --------------------------------------
-    setUserProfile: (state, action) => {
-      state.userProfile = action.payload || null;
-    },
-
-    // --------------------------------------
-    // UPDATE LOGGED-IN USER PARTIALLY
-    // useful after edit profile / follow count update
-    // --------------------------------------
     updateAuthUser: (state, action) => {
       if (!state.user) return;
 
@@ -55,23 +27,58 @@ const authSlice = createSlice({
       };
     },
 
-    // --------------------------------------
-    // RESET ONLY PROFILE PAGE DATA
-    // useful when leaving profile / loading another profile
-    // --------------------------------------
+    // -----------------------------
+    // Suggested Users
+    // -----------------------------
+    setSuggestedUsers: (state, action) => {
+      state.suggestedUsers = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    },
+
+    // -----------------------------
+    // Profile
+    // -----------------------------
+    setUserProfile: (state, action) => {
+      state.userProfile = action.payload || null;
+    },
+
     clearUserProfile: (state) => {
       state.userProfile = null;
+    },
+
+    // -----------------------------
+    // Selected Profile (optional)
+    // -----------------------------
+    setSelectedUser: (state, action) => {
+      state.selectedUserForProfile = action.payload || null;
+    },
+
+    clearSelectedUser: (state) => {
+      state.selectedUserForProfile = null;
+    },
+
+    // -----------------------------
+    // Logout
+    // -----------------------------
+    logoutUser: (state) => {
+      state.user = null;
+      state.userProfile = null;
+      state.suggestedUsers = [];
+      state.selectedUserForProfile = null;
     },
   },
 });
 
 export const {
   setAuthUser,
+  updateAuthUser,
   logoutUser,
   setSuggestedUsers,
   setUserProfile,
-  updateAuthUser,
   clearUserProfile,
+  setSelectedUser,
+  clearSelectedUser,
 } = authSlice.actions;
 
 export default authSlice.reducer;
