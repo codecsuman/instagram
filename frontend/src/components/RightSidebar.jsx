@@ -9,7 +9,6 @@ const RightSidebar = () => {
   const user = useSelector((state) => state.auth.user);
   const { loading } = useGetSuggestedUsers();
 
-  // prevent render before auth is restored
   if (!user?._id) return null;
 
   return (
@@ -24,11 +23,13 @@ const RightSidebar = () => {
         overflow-y-auto
       "
     >
-      {/* USER INFO */}
       <div className="flex items-center gap-3">
         <Link to={`/profile/${user._id}`}>
           <Avatar className="w-12 h-12">
-            <AvatarImage src={user.profilePicture || ""} alt={user.username} />
+            <AvatarImage
+              src={user.profilePicture || ""}
+              alt={user.username}
+            />
             <AvatarFallback>
               {user.username?.charAt(0)?.toUpperCase() || "U"}
             </AvatarFallback>
@@ -49,7 +50,6 @@ const RightSidebar = () => {
         </div>
       </div>
 
-      {/* SUGGESTED USERS */}
       <div className="mt-8">
         {loading ? (
           <p className="text-sm text-gray-400">Loading suggestions...</p>
