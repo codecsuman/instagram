@@ -4,10 +4,10 @@ import cloudinary from "../utils/cloudinary.js";
 import { Comment } from "../models/comment.model.js";
 import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
-import { getReceiverSocketIds, io } from "../socket/socket.js";
+import { io } from "../socket/socket.js";
 
 /* -------------------------------------------
-   ADD NEW POST
+   ADD NEW POST + FOLLOWER NOTIFICATION
 -------------------------------------------- */
 export const addNewPost = async (req, res) => {
   try {
@@ -23,7 +23,12 @@ export const addNewPost = async (req, res) => {
     }
 
     const optimizedImageBuffer = await sharp(image.buffer)
-      .resize({ width: 1080, height: 1080, fit: "inside", withoutEnlargement: true })
+      .resize({
+        width: 1080,
+        height: 1080,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
       .jpeg({ quality: 80 })
       .toBuffer();
 
@@ -55,6 +60,33 @@ export const addNewPost = async (req, res) => {
           select: "username profilePicture",
         },
       });
+
+    // 🆕 Notify all followers that this user posted a new photo
+    const author = await User.findById(authorId).select(
+      "username profilePicture followers",
+    );
+
+    if (author?.followers?.length > 0) {
+      const notification = {
+        type: "post",
+        userId: authorId,
+        userDetails: {
+          username: author.username,
+          profilePicture: author.profilePicture,
+        },
+        postId: post._id,
+        postImage: post.image,
+        message: "posted a new photo",
+      };
+
+      author.followers.forEach((followerId) => {
+        io.to(followerId.toString()).emit("notification", notification);
+      });
+
+      console.log(
+        `📢 New post notification sent to ${author.followers.length} followers`,
+      );
+    }
 
     return res.status(201).json({
       success: true,
@@ -133,7 +165,7 @@ export const getUserPost = async (req, res) => {
 };
 
 /* -------------------------------------------
-   LIKE POST
+   LIKE POST + NOTIFICATION
 -------------------------------------------- */
 export const likePost = async (req, res) => {
   try {
@@ -149,7 +181,7 @@ export const likePost = async (req, res) => {
     }
 
     const alreadyLiked = post.likes.some(
-      (id) => id.toString() === likerId.toString()
+      (id) => id.toString() === likerId.toString(),
     );
 
     if (!alreadyLiked) {
@@ -169,12 +201,8 @@ export const likePost = async (req, res) => {
         message: "liked your post",
       };
 
-      const receivers = getReceiverSocketIds(postOwnerId);
-      if (receivers && receivers.size > 0) {
-        receivers.forEach((sockId) => {
-          io.to(sockId).emit("notification", notification);
-        });
-      }
+      io.to(postOwnerId).emit("notification", notification);
+      console.log(`📢 Like notification sent to user ${postOwnerId}`);
     }
 
     return res.status(200).json({
@@ -207,7 +235,7 @@ export const dislikePost = async (req, res) => {
     }
 
     post.likes = post.likes.filter(
-      (id) => id.toString() !== likerId.toString()
+      (id) => id.toString() !== likerId.toString(),
     );
 
     await post.save();
@@ -226,7 +254,7 @@ export const dislikePost = async (req, res) => {
 };
 
 /* -------------------------------------------
-   ADD COMMENT
+   ADD COMMENT + NOTIFICATION + LIVE BROADCAST
 -------------------------------------------- */
 export const addComment = async (req, res) => {
   try {
@@ -257,11 +285,35 @@ export const addComment = async (req, res) => {
 
     const populatedComment = await Comment.findById(comment._id).populate(
       "author",
-      "username profilePicture"
+      "username profilePicture",
     );
 
     post.comments.push(comment._id);
     await post.save();
+
+    const commenter = await User.findById(commenterId).select(
+      "username profilePicture",
+    );
+    const postOwnerId = post.author.toString();
+
+    if (postOwnerId !== commenterId.toString()) {
+      const notification = {
+        type: "comment",
+        userId: commenterId,
+        userDetails: commenter,
+        postId,
+        message: "commented on your post",
+      };
+
+      io.to(postOwnerId).emit("notification", notification);
+      console.log(`📢 Comment notification sent to user ${postOwnerId}`);
+    }
+
+    // 🆕 Broadcast new comment to everyone viewing the feed (live update)
+    io.emit("newComment", {
+      postId,
+      comment: populatedComment,
+    });
 
     return res.status(201).json({
       success: true,
@@ -346,6 +398,58 @@ export const deletePost = async (req, res) => {
 };
 
 /* -------------------------------------------
+   EDIT POST CAPTION
+-------------------------------------------- */
+export const editPost = async (req, res) => {
+  try {
+    const authorId = req.id;
+    const postId = req.params.id;
+    const { caption } = req.body;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    if (post.author.toString() !== authorId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to edit this post",
+      });
+    }
+
+    post.caption = caption?.trim() || "";
+    await post.save();
+
+    const updatedPost = await Post.findById(post._id)
+      .populate("author", "username profilePicture")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 } },
+        populate: {
+          path: "author",
+          select: "username profilePicture",
+        },
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Post updated successfully",
+      post: updatedPost,
+    });
+  } catch (error) {
+    console.error("EDIT POST ERROR:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to edit post",
+    });
+  }
+};
+
+/* -------------------------------------------
    BOOKMARK / UNBOOKMARK POST
 -------------------------------------------- */
 export const bookmarkPost = async (req, res) => {
@@ -362,12 +466,12 @@ export const bookmarkPost = async (req, res) => {
     }
 
     const isBookmarked = user.bookmarks.some(
-      (id) => id.toString() === postId.toString()
+      (id) => id.toString() === postId.toString(),
     );
 
     if (isBookmarked) {
       user.bookmarks = user.bookmarks.filter(
-        (id) => id.toString() !== postId.toString()
+        (id) => id.toString() !== postId.toString(),
       );
       await user.save();
 

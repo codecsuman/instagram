@@ -1,10 +1,11 @@
 // Backend/controllers/message.controller.js
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
-import { getReceiverSocketIds, io } from "../socket/socket.js";
+import { User } from "../models/user.model.js";
+import { io } from "../socket/socket.js";
 
 /* --------------------------------------------------------
-   SEND MESSAGE (SAVE + REAL-TIME)
+   SEND MESSAGE + REAL-TIME NOTIFICATION
 -------------------------------------------------------- */
 export const sendMessage = async (req, res) => {
   try {
@@ -12,6 +13,13 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.params.id;
     const { textMessage } = req.body;
 
+    if (!textMessage || !textMessage.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message text is required",
+      });
+    }
+
     if (!receiverId) {
       return res.status(400).json({
         success: false,
@@ -19,18 +27,6 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    if (!textMessage?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Message cannot be empty",
-      });
-    }
-
-    const cleanMessage = textMessage.trim();
-
-    // -----------------------------------------
-    // FIND OR CREATE CONVERSATION
-    // -----------------------------------------
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });
@@ -38,56 +34,43 @@ export const sendMessage = async (req, res) => {
     if (!conversation) {
       conversation = await Conversation.create({
         participants: [senderId, receiverId],
-        messages: [],
       });
     }
 
-    // -----------------------------------------
-    // CREATE MESSAGE
-    // IMPORTANT: conversationId added here
-    // -----------------------------------------
-    let newMessage = await Message.create({
-      conversationId: conversation._id,
+    // 🆕 conversationId is now included — this was the missing required field
+    const newMessage = await Message.create({
       senderId,
       receiverId,
-      message: cleanMessage,
+      message: textMessage.trim(),
+      conversationId: conversation._id,
     });
 
-    // populate sender info for frontend UI
-    newMessage = await Message.findById(newMessage._id).populate(
-      "senderId",
-      "username profilePicture"
+    if (newMessage) {
+      conversation.messages.push(newMessage._id);
+      conversation.lastMessage = newMessage._id;
+      await conversation.save();
+    }
+
+    // Socket: Send message in real-time
+    io.to(receiverId.toString()).emit("newMessage", newMessage);
+
+    // Real-time message notification
+    const sender = await User.findById(senderId).select(
+      "username profilePicture",
     );
+    const notification = {
+      type: "message",
+      userId: senderId,
+      userDetails: sender,
+      postId: null,
+      message: "sent you a message",
+    };
 
-    // -----------------------------------------
-    // SAVE MESSAGE IN CONVERSATION
-    // -----------------------------------------
-    conversation.messages.push(newMessage._id);
-    conversation.lastMessage = newMessage._id;
-    await conversation.save();
+    io.to(receiverId.toString()).emit("notification", notification);
+    console.log(`📢 Message notification sent to user ${receiverId}`);
 
-    // -----------------------------------------
-    // SOCKET.IO REAL-TIME EMIT
-    // -----------------------------------------
-
-    // send to receiver (all devices)
-    const receiverSockets = getReceiverSocketIds(receiverId);
-    receiverSockets.forEach((sockId) => {
-      io.to(sockId).emit("newMessage", newMessage);
-    });
-
-    // also send to sender's own active devices so chat updates instantly
-    const senderSockets = getReceiverSocketIds(senderId);
-    senderSockets.forEach((sockId) => {
-      io.to(sockId).emit("newMessage", newMessage);
-    });
-
-    // -----------------------------------------
-    // RESPONSE
-    // -----------------------------------------
     return res.status(201).json({
       success: true,
-      message: "Message sent successfully",
       newMessage,
     });
   } catch (error) {
@@ -95,47 +78,38 @@ export const sendMessage = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to send message",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
 
 /* --------------------------------------------------------
-   GET ALL MESSAGES BETWEEN TWO USERS
+   GET ALL MESSAGES
 -------------------------------------------------------- */
 export const getMessage = async (req, res) => {
   try {
     const senderId = req.id;
     const receiverId = req.params.id;
 
-    if (!receiverId) {
-      return res.status(400).json({
-        success: false,
-        message: "Receiver id is required",
+    const conversation = await Conversation.findOne({
+      participants: { $all: [senderId, receiverId] },
+    }).populate("messages");
+
+    if (!conversation) {
+      return res.status(200).json({
+        success: true,
+        messages: [],
       });
     }
 
-    const conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
-    }).populate({
-      path: "messages",
-      options: { sort: { createdAt: 1 } },
-      populate: {
-        path: "senderId",
-        select: "username profilePicture",
-      },
-    });
-
     return res.status(200).json({
       success: true,
-      messages: conversation ? conversation.messages : [],
+      messages: conversation.messages || [],
     });
   } catch (error) {
     console.error("GET MESSAGE ERROR:", error.message);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch messages",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

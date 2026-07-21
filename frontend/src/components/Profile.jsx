@@ -5,7 +5,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { AtSign, Heart, MessageCircle } from "lucide-react";
+import {
+  AtSign,
+  Heart,
+  MessageCircle,
+  UserPlus,
+  UserCheck,
+} from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { setAuthUser, setUserProfile } from "@/redux/authSlice";
@@ -16,16 +22,13 @@ const Profile = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // This hook owns the fetch + loading state for the visited profile
   useGetUserProfile(userId);
 
   const [activeTab, setActiveTab] = useState("posts");
+  const [followLoading, setFollowLoading] = useState(false);
 
-  // -----------------------------------------------------------------
-  // EVERY HOOK LIVES HERE, ABOVE ANY CONDITIONAL RETURN.
-  // -----------------------------------------------------------------
   const { userProfile, user, profileLoading } = useSelector(
-    (store) => store.auth
+    (store) => store.auth,
   );
 
   const posts = Array.isArray(userProfile?.posts) ? userProfile.posts : [];
@@ -43,61 +46,44 @@ const Profile = () => {
     user?._id?.toString() === userProfile?._id?.toString();
 
   const isFollowing = useMemo(() => {
-    return followers.some((id) => id.toString() === user?._id?.toString());
+    if (!user?._id || !userProfile?._id) return false;
+    return followers.some((id) => id.toString() === user._id.toString());
   }, [followers, user?._id]);
 
   const displayedPosts = useMemo(() => {
-    if (activeTab === "saved" && isLoggedInUserProfile) {
-      return bookmarks;
-    }
+    if (activeTab === "saved" && isLoggedInUserProfile) return bookmarks;
     return posts;
   }, [activeTab, posts, bookmarks, isLoggedInUserProfile]);
 
-  // ---------------------------------------------------
-  // FOLLOW / UNFOLLOW
-  // ---------------------------------------------------
-  // The backend response now returns the updated `currentUser` and
-  // `targetUser` objects directly, so we dispatch both straight from
-  // the response instead of re-fetching the profile separately.
   const followHandler = async () => {
+    if (!userProfile?._id || followLoading || isLoggedInUserProfile) return;
     try {
+      setFollowLoading(true);
       const res = await api.post(`/user/followorunfollow/${userProfile._id}`);
-
       if (res.data.success) {
         toast.success(res.data.message);
-
-        if (res.data.currentUser) {
-          dispatch(setAuthUser(res.data.currentUser));
-        }
-
-        if (res.data.targetUser) {
-          dispatch(setUserProfile(res.data.targetUser));
-        }
+        if (res.data.currentUser) dispatch(setAuthUser(res.data.currentUser));
+        if (res.data.targetUser) dispatch(setUserProfile(res.data.targetUser));
       }
     } catch (error) {
       console.error("FOLLOW ERROR:", error);
       toast.error(error?.response?.data?.message || "Something went wrong");
+    } finally {
+      setFollowLoading(false);
     }
   };
 
-  // ---------------------------------------------------
-  // MESSAGE USER
-  // ---------------------------------------------------
   const messageHandler = () => {
     dispatch(
       setSelectedChatUser({
         _id: userProfile._id,
         username: userProfile.username,
         profilePicture: userProfile.profilePicture,
-      })
+      }),
     );
-
     navigate("/chat");
   };
 
-  // -----------------------------------------------------------------
-  // CONDITIONAL RETURNS COME AFTER EVERY HOOK, NEVER BEFORE.
-  // -----------------------------------------------------------------
   if (profileLoading) {
     return (
       <div className="flex justify-center mt-20">
@@ -117,9 +103,7 @@ const Profile = () => {
   return (
     <div className="flex max-w-5xl mx-auto px-4 md:px-10">
       <div className="flex flex-col gap-20 p-8 w-full">
-        {/* ---------------- HEADER ---------------- */}
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Avatar */}
           <section className="flex items-center justify-center md:justify-start">
             <Avatar className="h-32 w-32">
               <AvatarImage
@@ -132,7 +116,6 @@ const Profile = () => {
             </Avatar>
           </section>
 
-          {/* Profile Details */}
           <section className="flex flex-col gap-5">
             <div className="flex items-center gap-4 flex-wrap">
               <span className="text-xl font-semibold">
@@ -145,31 +128,33 @@ const Profile = () => {
                     Edit profile
                   </Button>
                 </Link>
-              ) : isFollowing ? (
-                <>
-                  <Button
-                    variant="secondary"
-                    className="h-8"
-                    onClick={followHandler}
-                  >
-                    Unfollow
-                  </Button>
-
-                  <Button
-                    variant="secondary"
-                    className="h-8"
-                    onClick={messageHandler}
-                  >
-                    Message
-                  </Button>
-                </>
               ) : (
                 <>
                   <Button
-                    className="h-8 bg-[#0095F6] hover:bg-[#3192d2]"
+                    className={`h-8 transition-all duration-200 ${
+                      isFollowing
+                        ? "bg-gray-100 text-black hover:bg-gray-200 border border-gray-300"
+                        : "bg-[#0095F6] hover:bg-[#1877F2] text-white"
+                    }`}
                     onClick={followHandler}
+                    disabled={followLoading}
                   >
-                    Follow
+                    {followLoading ? (
+                      <span className="flex items-center gap-1">
+                        <span className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Loading...
+                      </span>
+                    ) : isFollowing ? (
+                      <span className="flex items-center gap-1">
+                        <UserCheck className="h-4 w-4" />
+                        Following
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <UserPlus className="h-4 w-4" />
+                        Follow
+                      </span>
+                    )}
                   </Button>
 
                   <Button
@@ -183,7 +168,6 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Followers */}
             <div className="flex items-center gap-6 text-sm flex-wrap">
               <p>
                 <span className="font-semibold">{posts.length}</span> posts
@@ -198,12 +182,10 @@ const Profile = () => {
               </p>
             </div>
 
-            {/* Bio */}
             <div>
               <p className="font-semibold">
                 {userProfile?.bio || "No bio yet."}
               </p>
-
               <Badge variant="secondary" className="w-fit mt-2">
                 <AtSign className="mr-1 h-4 w-4" />
                 {userProfile.username}
@@ -212,25 +194,19 @@ const Profile = () => {
           </section>
         </div>
 
-        {/* ---------------- TABS ---------------- */}
         <div className="border-t border-gray-200">
           <div className="flex items-center justify-center gap-10 text-sm">
             <button
               type="button"
-              className={`py-3 cursor-pointer ${
-                activeTab === "posts" ? "font-bold border-b" : ""
-              }`}
+              className={`py-3 cursor-pointer transition-all ${activeTab === "posts" ? "font-bold border-b border-black" : "text-gray-500"}`}
               onClick={() => setActiveTab("posts")}
             >
               POSTS
             </button>
-
             {isLoggedInUserProfile && (
               <button
                 type="button"
-                className={`py-3 cursor-pointer ${
-                  activeTab === "saved" ? "font-bold border-b" : ""
-                }`}
+                className={`py-3 cursor-pointer transition-all ${activeTab === "saved" ? "font-bold border-b border-black" : "text-gray-500"}`}
                 onClick={() => setActiveTab("saved")}
               >
                 SAVED
@@ -238,20 +214,17 @@ const Profile = () => {
             )}
           </div>
 
-          {/* ---------------- POSTS GRID ---------------- */}
           <div className="grid grid-cols-3 gap-1 mt-4">
             {displayedPosts.length === 0 && (
               <p className="col-span-3 text-center text-gray-500 py-10">
                 {activeTab === "posts" ? "No posts yet." : "No saved posts."}
               </p>
             )}
-
             {displayedPosts.map((post) => {
               const likes = Array.isArray(post?.likes) ? post.likes : [];
               const comments = Array.isArray(post?.comments)
                 ? post.comments
                 : [];
-
               return (
                 <div key={post._id} className="relative group cursor-pointer">
                   <img
@@ -259,17 +232,12 @@ const Profile = () => {
                     alt="post"
                     className="rounded-sm aspect-square w-full object-cover"
                   />
-
-                  <div
-                    className="absolute inset-0 flex items-center justify-center
-                    bg-black/50 opacity-0 group-hover:opacity-100 transition"
-                  >
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition">
                     <div className="flex items-center text-white space-x-5">
                       <div className="flex items-center gap-1">
                         <Heart className="h-5 w-5" />
                         <span>{likes.length}</span>
                       </div>
-
                       <div className="flex items-center gap-1">
                         <MessageCircle className="h-5 w-5" />
                         <span>{comments.length}</span>

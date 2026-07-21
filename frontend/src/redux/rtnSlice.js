@@ -14,14 +14,19 @@ const rtnSlice = createSlice({
       const noti = action.payload;
       if (!noti) return;
 
-      const uniqueKey = `${noti.type}-${noti.userId}-${noti.postId || ""}`;
+      const uniqueKey = `${noti.type}-${noti.userId}-${noti.postId || ""}-${Date.now()}`;
 
       const alreadyExist = state.notifications.some(
-        (item) => item.uniqueKey === uniqueKey
+        (item) =>
+          item.userId === noti.userId &&
+          item.type === noti.type &&
+          item.postId === noti.postId,
       );
 
       // ADD notification
-      if (["like", "comment"].includes(noti.type)) {
+      if (
+        ["like", "comment", "follow", "message", "post"].includes(noti.type)
+      ) {
         if (!alreadyExist) {
           state.notifications.unshift({
             ...noti,
@@ -32,16 +37,18 @@ const rtnSlice = createSlice({
         }
       }
 
-      // REMOVE notification
-      if (["dislike", "comment_removed"].includes(noti.type)) {
+      // REMOVE notification (for dislike)
+      if (["dislike"].includes(noti.type)) {
         const before = state.notifications.length;
-
         state.notifications = state.notifications.filter(
-          (item) => item.uniqueKey !== uniqueKey
+          (item) =>
+            !(
+              item.userId === noti.userId &&
+              item.type === "like" &&
+              item.postId === noti.postId
+            ),
         );
-
         const after = state.notifications.length;
-
         if (after < before && state.unreadCount > 0) {
           state.unreadCount -= 1;
         }
@@ -59,10 +66,7 @@ const rtnSlice = createSlice({
   },
 });
 
-export const {
-  setLikeNotification,
-  markAllRead,
-  clearNotifications,
-} = rtnSlice.actions;
+export const { setLikeNotification, markAllRead, clearNotifications } =
+  rtnSlice.actions;
 
 export default rtnSlice.reducer;

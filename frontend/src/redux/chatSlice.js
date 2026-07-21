@@ -6,6 +6,8 @@ const initialState = {
   loading: false,
   error: null,
   hasMore: true,
+  conversations: [],
+  conversationsLoading: false,
 };
 
 const chatSlice = createSlice({
@@ -34,7 +36,7 @@ const chatSlice = createSlice({
       if (!exists) {
         state.messages.push(msg);
         state.messages.sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
         );
       }
     },
@@ -74,6 +76,17 @@ const chatSlice = createSlice({
     },
 
     // --------------------------
+    // CONVERSATIONS
+    // --------------------------
+    setConversations: (state, action) => {
+      state.conversations = Array.isArray(action.payload) ? action.payload : [];
+    },
+
+    setConversationsLoading: (state, action) => {
+      state.conversationsLoading = Boolean(action.payload);
+    },
+
+    // --------------------------
     // RESET CHAT
     // --------------------------
     resetChat: (state) => {
@@ -82,6 +95,8 @@ const chatSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.hasMore = true;
+      state.conversations = [];
+      state.conversationsLoading = false;
     },
   },
 });
@@ -94,6 +109,8 @@ export const {
   setError,
   appendOldMessages,
   setHasMore,
+  setConversations,
+  setConversationsLoading,
   resetChat,
 } = chatSlice.actions;
 

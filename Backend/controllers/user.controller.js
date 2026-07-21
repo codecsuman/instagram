@@ -5,6 +5,7 @@ import cloudinary from "../utils/cloudinary.js";
 import getDataUri from "../utils/datauri.js";
 import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
+import { io } from "../socket/socket.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -119,7 +120,9 @@ export const login = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      "+password",
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -322,12 +325,12 @@ export const getSuggestedUsers = async (req, res) => {
 };
 
 // --------------------------------------------------
-// FOLLOW / UNFOLLOW
+// FOLLOW / UNFOLLOW + REAL-TIME NOTIFICATION
 // --------------------------------------------------
 export const followOrUnfollow = async (req, res) => {
   try {
-    const followerId = req.id;       // logged in user
-    const targetId = req.params.id;  // profile being followed/unfollowed
+    const followerId = req.id;
+    const targetId = req.params.id;
 
     if (!targetId) {
       return res.status(400).json({
@@ -356,7 +359,7 @@ export const followOrUnfollow = async (req, res) => {
     }
 
     const isFollowing = currentUser.following.some(
-      (id) => String(id) === String(targetId)
+      (id) => String(id) === String(targetId),
     );
 
     let action = "";
@@ -366,7 +369,6 @@ export const followOrUnfollow = async (req, res) => {
       targetUser.followers.pull(followerId);
       action = "unfollow";
     } else {
-      // addToSet prevents duplicate ObjectIds (e.g. double-click, retry, race condition)
       currentUser.following.addToSet(targetId);
       targetUser.followers.addToSet(followerId);
       action = "follow";
@@ -374,8 +376,6 @@ export const followOrUnfollow = async (req, res) => {
 
     await Promise.all([currentUser.save(), targetUser.save()]);
 
-    // Re-use the already-loaded documents instead of issuing fresh findById
-    // queries — just populate posts on what we already have in memory.
     const postPopulateOptions = {
       path: "posts",
       options: { sort: { createdAt: -1 } },
@@ -390,6 +390,23 @@ export const followOrUnfollow = async (req, res) => {
       targetUser.populate(postPopulateOptions),
     ]);
 
+    // Real-time follow notification
+    if (action === "follow") {
+      const follower = await User.findById(followerId).select(
+        "username profilePicture",
+      );
+      const notification = {
+        type: "follow",
+        userId: followerId,
+        userDetails: follower,
+        postId: null,
+        message: "started following you",
+      };
+
+      io.to(targetId.toString()).emit("notification", notification);
+      console.log(`📢 Follow notification sent to user ${targetId}`);
+    }
+
     return res.status(200).json({
       success: true,
       action,
@@ -397,8 +414,6 @@ export const followOrUnfollow = async (req, res) => {
         action === "follow"
           ? "Followed successfully"
           : "Unfollowed successfully",
-
-      // 🔥 IMPORTANT: send full updated user objects for frontend state sync
       currentUser,
       targetUser,
     });

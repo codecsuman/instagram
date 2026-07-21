@@ -8,6 +8,7 @@ import {
   bookmarkPost,
   deletePost,
   dislikePost,
+  editPost,
   getAllPost,
   getCommentsOfPost,
   getUserPost,
@@ -32,6 +33,9 @@ router.get("/:id/dislike", isAuthenticated, dislikePost);
 /* ---------------------- COMMENT ---------------------- */
 router.post("/:id/comment", isAuthenticated, addComment);
 router.get("/:id/comment/all", isAuthenticated, getCommentsOfPost);
+
+/* ---------------------- EDIT POST ---------------------- */
+router.patch("/edit/:id", isAuthenticated, editPost);
 
 /* ---------------------- DELETE POST ---------------------- */
 router.delete("/delete/:id", isAuthenticated, deletePost);

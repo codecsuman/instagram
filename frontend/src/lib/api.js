@@ -16,6 +16,17 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // IGNORE CANCELLED REQUESTS (from AbortController cleanup)
+    if (
+      error.code === "ERR_CANCELED" ||
+      error.code === "ECONNABORTED" ||
+      error.message === "canceled" ||
+      error.message === "Request aborted"
+    ) {
+      // Silently reject without logging — this is expected behavior
+      return Promise.reject(error);
+    }
+
     // network / backend down / CORS / timeout
     if (!error.response) {
       console.error("❌ API Network Error:", error.message);
@@ -32,7 +43,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

@@ -14,8 +14,12 @@ import connectDB from "./utils/db.js";
 import { app, server } from "./socket/socket.js";
 
 // routes
+import conversationRoute from "./routes/conversation.route.js";
+import exploreRoute from "./routes/explore.route.js";
 import messageRoute from "./routes/message.route.js";
 import postRoute from "./routes/post.route.js";
+import reportRoute from "./routes/report.route.js";
+import searchRoute from "./routes/search.route.js";
 import userRoute from "./routes/user.route.js";
 
 const PORT = process.env.PORT || 5000;
@@ -30,10 +34,15 @@ app.set("trust proxy", 1);
 // -------------------------
 // ALLOWED ORIGINS
 // -------------------------
-const allowedOrigins = [...new Set([
-  "http://localhost:5173",
-  CLIENT_URL,
-])].filter(Boolean);
+const parseOrigins = (value) =>
+  String(value || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+const allowedOrigins = [
+  ...new Set(["http://localhost:5173", ...parseOrigins(CLIENT_URL)]),
+];
 
 // -------------------------
 // SECURITY / GLOBAL MIDDLEWARE
@@ -41,7 +50,7 @@ const allowedOrigins = [...new Set([
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
-  })
+  }),
 );
 
 app.use(
@@ -50,7 +59,7 @@ app.use(
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
-  })
+  }),
 );
 
 app.use(mongoSanitize());
@@ -71,7 +80,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 app.use(express.json({ limit: "10mb" }));
@@ -103,6 +112,10 @@ app.get("/api/health", (req, res) => {
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/post", postRoute);
 app.use("/api/v1/message", messageRoute);
+app.use("/api/v1/conversation", conversationRoute);
+app.use("/api/v1/search", searchRoute);
+app.use("/api/v1/explore", exploreRoute);
+app.use("/api/v1/report", reportRoute);
 
 // -------------------------
 // 404 HANDLER

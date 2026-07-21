@@ -4,26 +4,34 @@ import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { setSelectedChatUser, addMessage } from "@/redux/chatSlice";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { MessageCircleCode } from "lucide-react";
+import { MessageCircleCode, Users } from "lucide-react";
 import Messages from "./Messages";
+import ConversationsList from "./ConversationsList";
 import api from "@/lib/api";
 import useGetRTM from "@/hooks/useGetRTM";
 import useGetAllMessage from "@/hooks/useGetAllMessage";
+import useGetConversations from "@/hooks/useGetConversations";
 import { toast } from "sonner";
 
 const ChatPage = () => {
   const [textMessage, setTextMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
 
   const dispatch = useDispatch();
 
   const user = useSelector((state) => state.auth.user);
-  const suggestedUsers = useSelector((state) => state.auth.suggestedUsers || []);
+  const suggestedUsers = useSelector(
+    (state) => state.auth.suggestedUsers || [],
+  );
   const selectedChatUser = useSelector((state) => state.chat.selectedChatUser);
   const onlineUsers = useSelector((state) => state.socket.onlineUsers || []);
 
   // real socket comes from App.jsx
   const socket = window._socket || null;
+
+  // fetch conversations list
+  useGetConversations();
 
   // fetch messages when selected user changes
   useGetAllMessage();
@@ -55,7 +63,7 @@ const ChatPage = () => {
       toast.error(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to send message"
+          "Failed to send message",
       );
     } finally {
       setSending(false);
@@ -64,50 +72,76 @@ const ChatPage = () => {
 
   return (
     <div className="flex h-screen w-full bg-white">
-      {/* LEFT USER LIST */}
+      {/* LEFT SIDEBAR - CONVERSATIONS */}
       <section className="w-full md:w-[320px] border-r border-gray-300 flex flex-col">
-        <div className="px-4 py-4 border-b border-gray-300">
+        <div className="px-4 py-4 border-b border-gray-300 flex items-center justify-between">
           <h1 className="font-bold text-xl">{user?.username || "Messages"}</h1>
+          <button
+            onClick={() => setShowUsers(!showUsers)}
+            className="p-2 hover:bg-gray-100 rounded-full transition"
+            title="New message"
+          >
+            <Users size={20} />
+          </button>
         </div>
 
-        <div className="overflow-y-auto flex-1">
-          {suggestedUsers.length > 0 ? (
-            suggestedUsers.map((u) => {
-              const isOnline = onlineUsers.includes(u._id);
-              const isSelected = selectedChatUser?._id === u._id;
+        {/* Toggle between Conversations and Suggested Users */}
+        {showUsers ? (
+          <>
+            <div className="px-4 py-2 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Suggested
+              </p>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {suggestedUsers.length > 0 ? (
+                suggestedUsers.map((u) => {
+                  const isOnline = onlineUsers.includes(u._id);
+                  const isSelected = selectedChatUser?._id === u._id;
 
-              return (
-                <div
-                  key={u._id}
-                  onClick={() => dispatch(setSelectedChatUser(u))}
-                  className={`flex gap-3 items-center p-3 cursor-pointer transition ${
-                    isSelected ? "bg-gray-100" : "hover:bg-gray-50"
-                  }`}
-                >
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={u.profilePicture} />
-                    <AvatarFallback>
-                      {u?.username?.charAt(0)?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-medium truncate">{u.username}</span>
-                    <span
-                      className={`text-xs font-medium ${
-                        isOnline ? "text-green-600" : "text-gray-500"
+                  return (
+                    <div
+                      key={u._id}
+                      onClick={() => {
+                        dispatch(setSelectedChatUser(u));
+                        setShowUsers(false);
+                      }}
+                      className={`flex gap-3 items-center p-3 cursor-pointer transition ${
+                        isSelected ? "bg-gray-100" : "hover:bg-gray-50"
                       }`}
                     >
-                      {isOnline ? "online" : "offline"}
-                    </span>
-                  </div>
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={u.profilePicture} />
+                        <AvatarFallback>
+                          {u?.username?.charAt(0)?.toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate">
+                          {u.username}
+                        </span>
+                        <span
+                          className={`text-xs font-medium ${
+                            isOnline ? "text-green-600" : "text-gray-500"
+                          }`}
+                        >
+                          {isOnline ? "online" : "offline"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-4 text-sm text-gray-500">
+                  No users available
                 </div>
-              );
-            })
-          ) : (
-            <div className="p-4 text-sm text-gray-500">No users available</div>
-          )}
-        </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <ConversationsList />
+        )}
       </section>
 
       {/* RIGHT CHAT WINDOW */}
