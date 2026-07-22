@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom"; // 🆕 ADD THIS
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Link } from "react-router-dom";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import { setSelectedPost, updateSinglePost } from "@/redux/postSlice";
 
 const CommentDialog = ({ open, setOpen }) => {
+  const navigate = useNavigate(); // 🆕 ADD THIS
   const dispatch = useDispatch();
   const { selectedPost } = useSelector((state) => state.post);
 
@@ -24,7 +26,6 @@ const CommentDialog = ({ open, setOpen }) => {
   const scrollRef = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // reset input whenever dialog closes or post changes
   useEffect(() => {
     if (!open) {
       setText("");
@@ -33,7 +34,6 @@ const CommentDialog = ({ open, setOpen }) => {
     }
   }, [open, selectedPost?._id]);
 
-  // auto-scroll to latest comment
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -46,7 +46,6 @@ const CommentDialog = ({ open, setOpen }) => {
     ? selectedPost.comments
     : [];
 
-  // 🆕 Handle images array (backward compatible)
   const images = Array.isArray(selectedPost?.images)
     ? selectedPost.images
     : selectedPost?.image
@@ -100,12 +99,23 @@ const CommentDialog = ({ open, setOpen }) => {
   const goToNextImage = () =>
     setCurrentImageIndex((prev) => Math.min(images.length - 1, prev + 1));
 
+  // 🆕 Handle image click → navigate to author's profile
+  const handleImageClick = () => {
+    if (selectedPost?.author?._id) {
+      navigate(`/profile/${selectedPost.author._id}`);
+      setOpen(false); // Close dialog after navigation
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-5xl p-0 flex flex-col overflow-hidden">
         <div className="flex flex-1 min-h-[500px]">
-          {/* LEFT IMAGE CAROUSEL */}
-          <div className="w-1/2 bg-black hidden md:block relative">
+          {/* LEFT IMAGE CAROUSEL — CLICK TO GO TO PROFILE */}
+          <div
+            className="w-1/2 bg-black hidden md:block relative cursor-pointer"
+            onClick={handleImageClick}
+          >
             {images.length > 0 ? (
               <>
                 <img
@@ -121,22 +131,31 @@ const CommentDialog = ({ open, setOpen }) => {
                 {images.length > 1 && (
                   <>
                     <button
-                      onClick={goToPrevImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToPrevImage();
+                      }}
                       disabled={currentImageIndex === 0}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition z-10"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
-                      onClick={goToNextImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToNextImage();
+                      }}
                       disabled={currentImageIndex === images.length - 1}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition z-10"
                     >
                       <ChevronRight size={24} />
                     </button>
 
                     {/* Dot indicators */}
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    <div
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {images.map((_, idx) => (
                         <button
                           key={idx}
@@ -151,7 +170,7 @@ const CommentDialog = ({ open, setOpen }) => {
                     </div>
 
                     {/* Image counter */}
-                    <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                    <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
                       {currentImageIndex + 1} / {images.length}
                     </div>
                   </>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import {
@@ -23,6 +24,7 @@ import { setPosts, setSelectedPost, toggleBookmark } from "@/redux/postSlice";
 import { Badge } from "./ui/badge";
 
 const Post = ({ post }) => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((store) => store.auth);
   const { posts, selectedPost } = useSelector((store) => store.post);
@@ -35,12 +37,10 @@ const Post = ({ post }) => {
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Report states
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
 
-  // 🆕 Carousel state for multiple images
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const userId = user?._id?.toString();
@@ -56,12 +56,18 @@ const Post = ({ post }) => {
   const likeCount = likes.length;
   const isAuthor = userId === post.author?._id?.toString();
 
-  // 🆕 Handle images array (backward compatible with single image)
   const images = Array.isArray(post?.images)
     ? post.images
     : post?.image
       ? [post.image]
       : [];
+
+  // Navigate to author's profile (only used by avatar/username section)
+  const goToProfile = () => {
+    if (post.author?._id) {
+      navigate(`/profile/${post.author._id}`);
+    }
+  };
 
   const likeHandler = async () => {
     try {
@@ -192,7 +198,11 @@ const Post = ({ post }) => {
   return (
     <div className="my-8 w-full max-w-sm mx-auto">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        {/* CLICKABLE PROFILE SECTION — avatar + username only */}
+        <div
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
+          onClick={goToProfile}
+        >
           <Avatar>
             <AvatarImage
               src={post.author?.profilePicture || ""}
@@ -275,7 +285,7 @@ const Post = ({ post }) => {
         </Dialog>
       </div>
 
-      {/* 🆕 IMAGE CAROUSEL */}
+      {/* IMAGE CAROUSEL — not clickable to profile */}
       <div className="relative my-2 w-full aspect-square bg-black rounded-sm overflow-hidden">
         {images.length > 0 ? (
           <>
@@ -288,7 +298,6 @@ const Post = ({ post }) => {
               }}
             />
 
-            {/* Navigation arrows */}
             {images.length > 1 && (
               <>
                 <button
@@ -306,7 +315,6 @@ const Post = ({ post }) => {
                   <ChevronRight size={20} />
                 </button>
 
-                {/* Dot indicators */}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
                   {images.map((_, idx) => (
                     <button
