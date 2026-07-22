@@ -1,34 +1,36 @@
-cat > README.md << 'EOF'
+```bash
+cat > README.md <<'EOF'
 <div align="center">
 
-<br/>
+<br />
 
-██╗███╗ ██╗███████╗████████╗ █████╗ ██████╗ ██████╗ █████╗ ███╗ ███╗
-██║████╗ ██║██╔════╝╚══██╔══╝██╔══██╗██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
-██║██╔██╗ ██║███████╗ ██║ ███████║██║ ███╗██████╔╝███████║██╔████╔██║
-██║██║╚██╗██║╚════██║ ██║ ██╔══██║██║ ██║██╔══██╗██╔══██║██║╚██╔╝██║
-██║██║ ╚████║███████║ ██║ ██║ ██║╚██████╔╝██║ ██║██║ ██║██║ ╚═╝ ██║
-╚═╝╚═╝ ╚═══╝╚══════╝ ╚═╝ ╚═╝ ╚═╝ ╚═════╝ ╚═╝ ╚═╝╚═╝ ╚═╝╚═╝ ╚═╝
+<pre>
+██╗███╗   ██╗███████╗████████╗ █████╗  ██████╗ ██████╗  █████╗ ███╗   ███╗
+██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
+██║██╔██╗ ██║███████╗   ██║   ███████║██║  ███╗██████╔╝███████║██╔████╔██║
+██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║   ██║██╔══██╗██╔══██║██║╚██╔╝██║
+██║██║ ╚████║███████║   ██║   ██║  ██║╚██████╔╝██║  ██║██║  ██║██║ ╚═╝ ██║
+╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
 C L O N E
-
+</pre>
 
 ### *Share moments. Connect instantly. Built on the MERN Stack.*
 
-<br/>
+<br />
 
-[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](#)
-[![Backend API](https://img.shields.io/badge/⚙️%20Backend%20API-Render-10b981?style=for-the-badge)](#)
-[![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](#)
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](https://your-live-demo-url.com)
+[![Backend API](https://img.shields.io/badge/⚙️%20Backend%20API-Render-10b981?style=for-the-badge)](https://your-backend-url.com)
+[![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](https://github.com/your-username/instagram-clone)
 
-<br/>
+<br />
 
 ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
-![Redux](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white)
+![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=flat-square&logo=mongodb&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat-square&logo=socket.io&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
 
@@ -40,7 +42,7 @@ C L O N E
 
 - [About the Project](#-about-the-project)
 - [Features](#-features)
-- [Tech Stack](#️-tech-stack)
+- [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
 - [Environment Variables](#-environment-variables)
 - [API Reference — Notifications](#-api-reference--notifications)
@@ -50,62 +52,62 @@ C L O N E
 - [Deployment](#-deployment)
 - [Future Enhancements](#-future-enhancements)
 - [Author](#-author)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
 ## 🎯 About the Project
 
-**Instagram Clone** is a full-stack social media application built on the **MERN Stack**, letting users share photos, follow each other, like and comment on posts, chat in real time, and receive **persistent, real-time notifications** for every interaction.
+**Instagram Clone** is a full-stack social media application built with the **MERN Stack**. It allows users to share photos, follow each other, like and comment on posts, chat in real time, and receive **persistent real-time notifications** for every important interaction.
 
-> Built as a portfolio project to demonstrate full-stack development: REST API design, WebSocket-based real-time features, JWT authentication, and cloud media storage.
+> Built as a portfolio project to demonstrate full-stack development, REST API design, JWT authentication, WebSocket-based real-time features, and cloud media storage.
 
 ---
 
 ## ✨ Features
 
 ### 👤 User Features
+
 | Feature | Description |
 |---|---|
-| 🔐 **Secure Auth** | Registration & Login with JWT-protected sessions |
-| 🖼️ **Profile Management** | Bio, profile picture, followers/following |
+| 🔐 **Secure Auth** | Registration and login with JWT-protected sessions |
+| 🖼️ **Profile Management** | Bio, profile picture, followers, and following |
 | 📸 **Post Creation** | Upload photos with captions via Cloudinary |
-| 🖼️ **Multi-Photo Upload** | Attach up to **10 photos** in a single post (carousel-style) |
+| 🖼️ **Multi-Photo Upload** | Attach up to **10 photos** in a single post |
 | ❤️ **Like & Comment** | Real-time interaction on posts |
-| 💬 **Direct Messaging** | Real-time 1:1 chat via Socket.io |
-| 🔍 **Search Page** | Search any user by **username** or **name** with live results |
-| 🧭 **Explore Page** | Browse and discover posts from every user on the platform |
+| 💬 **Direct Messaging** | Real-time 1:1 chat using Socket.io |
+| 🔍 **Search Page** | Search users by **username** or **name** with live results |
+| 🧭 **Explore Page** | Discover posts from users across the platform |
 | 🔔 **Notifications** | Persistent, real-time alerts for likes, comments, follows, messages, and new posts |
-| 🔗 **Click-to-Redirect** | Clicking a notification (new message or new post) takes you straight to that message thread or post |
-| 🗄️ **Notification History** | Notifications are saved to MongoDB and survive page refreshes |
-| ✅ **Mark as Read** | Unread badge synced with backend, mark individual or all as read |
-| 👥 **Real-Time Follow Counts** | Follower / Following counts update live via Socket.io — no refresh needed |
-| 📱 **Responsive UI** | Works smoothly across all screen sizes |
+| 🔗 **Click-to-Redirect** | Open the exact post or message thread directly from a notification |
+| 🗄️ **Notification History** | Notifications are stored in MongoDB and survive refreshes |
+| ✅ **Mark as Read** | Mark individual or all notifications as read with synced unread counts |
+| 👥 **Real-Time Follow Counts** | Followers and following update instantly via Socket.io |
+| 📱 **Responsive UI** | Smooth experience across mobile, tablet, and desktop |
 
 ### ⚙️ System Features
-- 🔒 JWT Authentication & protected routes
+
+- 🔒 JWT authentication with protected routes
 - 🌐 RESTful API architecture
-- ⚡ Real-time updates via Socket.io (notifications, follow counts, messages)
-- 🗄️ MongoDB Atlas + Redux Persist for offline-safe state
-- ☁️ Cloudinary integration for multi-image uploads (up to 10 per post)
-- 🔔 Dual notification delivery — Socket (instant) + REST API (persistent)
+- ⚡ Real-time updates via Socket.io for messages, notifications, and follow counts
+- 🗄️ MongoDB Atlas with Redux Persist for resilient state handling
+- ☁️ Cloudinary integration for multi-image uploads
+- 🔔 Dual notification delivery: Socket.io for instant updates + REST API for persistence
 
 ---
 
 ## 🛠️ Tech Stack
 
-┌─────────────────────────────────────────────────────────────┐
-│ FULL STACK OVERVIEW │
-├─────────────────┬───────────────────────────────────────────┤
-│ Frontend │ React.js · Redux Toolkit · Redux Persist │
-│ │ Tailwind CSS · Axios │
-│ Backend │ Node.js · Express.js │
-│ Real-Time │ Socket.io │
-│ Database │ MongoDB Atlas · Mongoose ODM │
-│ Auth │ JSON Web Tokens (JWT) · bcrypt.js │
-│ File Upload │ Multer · Cloudinary │
-│ Deployment │ Vercel (FE) · Render (BE) │
-└─────────────────┴───────────────────────────────────────────┘
-
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React.js, Redux Toolkit, Redux Persist, Tailwind CSS, Axios |
+| **Backend** | Node.js, Express.js |
+| **Real-Time** | Socket.io |
+| **Database** | MongoDB Atlas, Mongoose |
+| **Authentication** | JWT, bcrypt.js |
+| **File Upload** | Multer, Cloudinary |
+| **Deployment** | Vercel (Frontend), Render (Backend) |
 
 ---
 
@@ -115,12 +117,13 @@ C L O N E
 
 ```bash
 node --version   # v18+ recommended
-npm --version    # v9+
+npm --version    # v9+ recommended
 ```
 
-You'll also need accounts for:
-- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) — cloud database
-- [Cloudinary](https://cloudinary.com) — image hosting
+You will also need accounts for:
+
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- [Cloudinary](https://cloudinary.com)
 
 ---
 
@@ -136,13 +139,13 @@ cd instagram-clone
 ```bash
 cd backend
 npm install
+npm run dev
 ```
 
-Create a `.env` file (see [Environment Variables](#-environment-variables)), then:
+Backend runs at:
 
 ```bash
-npm run dev
-# Server running at http://localhost:8000
+http://localhost:8000
 ```
 
 ### 3. Frontend Setup
@@ -151,7 +154,12 @@ npm run dev
 cd ../frontend
 npm install
 npm run dev
-# App running at http://localhost:5173
+```
+
+Frontend runs at:
+
+```bash
+http://localhost:5173
 ```
 
 ---
@@ -177,7 +185,7 @@ MAX_PHOTOS_PER_POST=10
 VITE_API_URL=http://localhost:8000/api/v1
 ```
 
-> ⚠️ **Never commit `.env` files.** Add them to `.gitignore`.
+> ⚠️ Never commit `.env` files. Make sure they are included in `.gitignore`.
 
 ---
 
@@ -190,9 +198,9 @@ VITE_API_URL=http://localhost:8000/api/v1
 
 **Notification Types:** `like` · `comment` · `follow` · `message` · `post`
 
-Notifications are created server-side via a shared `createNotification()` helper, saved to MongoDB for persistence, and emitted instantly over Socket.io so the client updates in real time.
+Notifications are created server-side using a shared `createNotification()` helper, saved to MongoDB for persistence, and emitted instantly through Socket.io so the client updates in real time.
 
-Each notification stores a `referenceId` (`postId` or `conversationId`) so clicking it on the frontend routes the user directly to the relevant `/post/:id` or `/messages/:conversationId` page.
+Each notification stores a `referenceId` (`postId` or `conversationId`) so clicking it on the frontend routes the user directly to `/post/:id` or `/messages/:conversationId`.
 
 ---
 
@@ -201,7 +209,7 @@ Each notification stores a `referenceId` (`postId` or `conversationId`) so click
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/v1/user/search?query=` | Search users by **username** or **name** |
-| `GET` | `/api/v1/post/explore` | Fetch paginated feed of posts from all users |
+| `GET` | `/api/v1/post/explore` | Fetch a paginated feed of posts from all users |
 
 ---
 
@@ -209,11 +217,11 @@ Each notification stores a `referenceId` (`postId` or `conversationId`) so click
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/post/create` | Create a new post — accepts up to **10 photos** (`photos[]`) in a single request |
-| `GET` | `/api/v1/post/:id` | Get a single post by ID (used for notification redirects) |
+| `POST` | `/api/v1/post/create` | Create a new post with up to **10 photos** using `photos[]` |
+| `GET` | `/api/v1/post/:id` | Get a single post by ID |
 | `DELETE` | `/api/v1/post/:id` | Delete a post |
 
-> Multi-photo uploads are handled by `multer` (array field, max count 10) and batch-uploaded to Cloudinary before the post document is saved.
+> Multi-photo uploads are handled with `multer` using an array field with a maximum of 10 files, then batch-uploaded to Cloudinary before the post document is saved.
 
 ---
 
@@ -221,10 +229,10 @@ Each notification stores a `referenceId` (`postId` or `conversationId`) so click
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/user/follow/:id` | Follow a user — emits a Socket.io event to update counts in real time |
-| `POST` | `/api/v1/user/unfollow/:id` | Unfollow a user — emits a Socket.io event to update counts in real time |
+| `POST` | `/api/v1/user/follow/:id` | Follow a user and emit a real-time follow update |
+| `POST` | `/api/v1/user/unfollow/:id` | Unfollow a user and emit a real-time follow update |
 
-Both the follower's and the target user's clients listen for the `follow-update` Socket.io event and update their follower/following counts live, without a page refresh.
+Both the follower and the target user listen for the `follow-update` Socket.io event so follower/following counts update instantly without a page refresh.
 
 ---
 
@@ -235,7 +243,7 @@ Both the follower's and the target user's clients listen for the `follow-update`
 | 🌐 Frontend | [Vercel](https://vercel.com) |
 | ⚙️ Backend | [Render](https://render.com) |
 | 🗄️ Database | [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) |
-| 🖼️ Media | [Cloudinary](https://cloudinary.com) |
+| 🖼️ Media Storage | [Cloudinary](https://cloudinary.com) |
 
 ---
 
@@ -245,8 +253,8 @@ Both the follower's and the target user's clients listen for the `follow-update`
 - [ ] 🎥 Reels / short video posts
 - [ ] 🔖 Saved posts
 - [ ] 🌙 Dark mode toggle
-- [ ] 📊 Analytics dashboard for profiles
-- [ ] 🔕 Notification preferences/settings
+- [ ] 📊 Profile analytics dashboard
+- [ ] 🔕 Notification preferences
 - [ ] 👥 Group chats
 
 ---
@@ -255,13 +263,13 @@ Both the follower's and the target user's clients listen for the `follow-update`
 
 <div align="center">
 
-<br/>
+<br />
 
 **Suman Jhanp**
 
 *MERN Stack Developer | Full-Stack Enthusiast*
 
-<br/>
+<br />
 
 [![GitHub](https://img.shields.io/badge/GitHub-codecsuman-1f2937?style=for-the-badge&logo=github)](https://github.com/codecsuman)
 [![Portfolio](https://img.shields.io/badge/Portfolio-sumanjhanp.netlify.app-f59e0b?style=for-the-badge&logo=netlify)](https://sumanjhanp.netlify.app)
@@ -272,11 +280,11 @@ Both the follower's and the target user's clients listen for the `follow-update`
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome!
+Contributions, issues, and feature requests are welcome.
 
 1. Fork the repository
 2. Create your feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'Add: your feature'`
+3. Commit your changes: `git commit -m "Add: your feature"`
 4. Push to the branch: `git push origin feature/your-feature`
 5. Open a Pull Request
 
@@ -284,17 +292,17 @@ Contributions, issues, and feature requests are welcome!
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for full details.
 
 ---
 
 <div align="center">
 
-<br/>
+<br />
 
-If this project helped you or sparked an idea — drop a ⭐ on the repo!
+If this project helped you or sparked an idea, consider dropping a ⭐ on the repo.
 
-<br/>
+<br />
 
 **Made with ❤️ by Suman Jhanp**
 
@@ -302,3 +310,4 @@ If this project helped you or sparked an idea — drop a ⭐ on the repo!
 
 </div>
 EOF
+```
