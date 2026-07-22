@@ -123,13 +123,23 @@ const LeftSidebar = () => {
     }
   };
 
+  // 🆕 FIXED: use the actual sender object (notif.sender / notif.userDetails),
+  // and actually select the chat user before navigating for message notifs
   const handleNotifClick = (notif) => {
-    if (notif.type === "follow") {
-      navigate(`/profile/${notif.userId}`);
-    } else if (notif.type === "message") {
+    const senderUser = notif.sender || notif.userDetails;
+    const senderId = senderUser?._id;
+
+    if (notif.type === "message") {
+      if (senderUser) {
+        dispatch(setSelectedChatUser(senderUser));
+      }
       navigate("/chat");
-    } else if (notif.postId) {
-      navigate(`/profile/${notif.userId}`);
+      return;
+    }
+
+    // like, comment, follow, post -> go to the sender's profile
+    if (senderId) {
+      navigate(`/profile/${senderId}`);
     }
   };
 
