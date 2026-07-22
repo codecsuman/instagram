@@ -9,39 +9,56 @@ import { io } from "../socket/socket.js";
 
 /* -------------------------------------------
    ADD NEW POST + FOLLOWER NOTIFICATION
+   🆕 SUPPORTS MULTIPLE IMAGES (carousel)
 -------------------------------------------- */
 export const addNewPost = async (req, res) => {
   try {
     const { caption = "" } = req.body;
-    const image = req.file;
     const authorId = req.id;
 
-    if (!image || !image.buffer) {
+    // 🆕 Handle multiple files (multer .array("images", 10))
+    const files = req.files;
+
+    if (!files || files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Image is required",
+        message: "At least one image is required",
       });
     }
 
-    const optimizedImageBuffer = await sharp(image.buffer)
-      .resize({
-        width: 1080,
-        height: 1080,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality: 80 })
-      .toBuffer();
+    if (files.length > 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Maximum 10 images allowed per post",
+      });
+    }
 
-    const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString("base64")}`;
+    // 🆕 Upload all images to Cloudinary
+    const uploadedImages = [];
 
-    const uploaded = await cloudinary.uploader.upload(fileUri, {
-      folder: "instagram_clone/posts",
-    });
+    for (const file of files) {
+      const optimizedImageBuffer = await sharp(file.buffer)
+        .resize({
+          width: 1080,
+          height: 1080,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString("base64")}`;
+
+      const uploaded = await cloudinary.uploader.upload(fileUri, {
+        folder: "instagram_clone/posts",
+      });
+
+      uploadedImages.push(uploaded.secure_url);
+    }
 
     const post = await Post.create({
       caption: caption.trim(),
-      image: uploaded.secure_url,
+      images: uploadedImages, // 🆕 Array of image URLs
       author: authorId,
       comments: [],
       likes: [],
@@ -160,7 +177,7 @@ export const getUserPost = async (req, res) => {
 };
 
 /* -------------------------------------------
-   LIKE POST + NOTIFICATION (FIXED)
+   LIKE POST + NOTIFICATION
 -------------------------------------------- */
 export const likePost = async (req, res) => {
   try {
@@ -183,7 +200,6 @@ export const likePost = async (req, res) => {
       post.likes.push(likerId);
       await post.save();
 
-      // Send notification to post owner (if not self-like)
       const postOwnerId = post.author.toString();
       if (postOwnerId !== likerId.toString()) {
         await createNotification({
@@ -283,7 +299,6 @@ export const addComment = async (req, res) => {
     post.comments.push(comment._id);
     await post.save();
 
-    // Send notification to post owner (if not self-comment)
     const postOwnerId = post.author.toString();
     if (postOwnerId !== commenterId.toString()) {
       await createNotification({
@@ -296,7 +311,6 @@ export const addComment = async (req, res) => {
       });
     }
 
-    // Broadcast new comment to everyone viewing the feed
     io.emit("newComment", {
       postId,
       comment: populatedComment,

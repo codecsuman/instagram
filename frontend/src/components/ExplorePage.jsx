@@ -133,6 +133,14 @@ const ExplorePage = () => {
 const ExploreCard = ({ post, large = false }) => {
   const navigate = useNavigate();
 
+  // 🆕 Handle images array (backward compatible)
+  const images = Array.isArray(post?.images)
+    ? post.images
+    : post?.image
+      ? [post.image]
+      : [];
+  const hasMultipleImages = images.length > 1;
+
   return (
     <div
       onClick={() => navigate(`/profile/${post.author?._id}`)}
@@ -141,11 +149,31 @@ const ExploreCard = ({ post, large = false }) => {
       }`}
     >
       <img
-        src={post.image}
+        src={images[0] || "/fallback.png"}
         alt="explore"
         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
       />
+
+      {/* 🆕 Multiple images indicator */}
+      {hasMultipleImages && (
+        <div className="absolute top-2 right-2 text-white drop-shadow-lg">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+          </svg>
+        </div>
+      )}
 
       {/* Hover Overlay */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">

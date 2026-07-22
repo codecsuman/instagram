@@ -2,7 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Link } from "react-router-dom";
-import { MoreHorizontal, Loader2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import Comment from "./Comment";
@@ -17,12 +22,14 @@ const CommentDialog = ({ open, setOpen }) => {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // reset input whenever dialog closes or post changes
   useEffect(() => {
     if (!open) {
       setText("");
       setLoading(false);
+      setCurrentImageIndex(0);
     }
   }, [open, selectedPost?._id]);
 
@@ -38,6 +45,13 @@ const CommentDialog = ({ open, setOpen }) => {
   const comments = Array.isArray(selectedPost.comments)
     ? selectedPost.comments
     : [];
+
+  // 🆕 Handle images array (backward compatible)
+  const images = Array.isArray(selectedPost?.images)
+    ? selectedPost.images
+    : selectedPost?.image
+      ? [selectedPost.image]
+      : [];
 
   const sendCommentHandler = async () => {
     if (!text.trim() || loading) return;
@@ -57,10 +71,7 @@ const CommentDialog = ({ open, setOpen }) => {
           comments: [...comments, newComment],
         };
 
-        // update selected post modal state
         dispatch(setSelectedPost(updatedPost));
-
-        // update same post in feed
         dispatch(updateSinglePost(updatedPost));
 
         toast.success("Comment added");
@@ -79,24 +90,78 @@ const CommentDialog = ({ open, setOpen }) => {
   const handleDialogChange = (isOpen) => {
     if (!isOpen) {
       setText("");
+      setCurrentImageIndex(0);
     }
     setOpen(isOpen);
   };
+
+  const goToPrevImage = () =>
+    setCurrentImageIndex((prev) => Math.max(0, prev - 1));
+  const goToNextImage = () =>
+    setCurrentImageIndex((prev) => Math.min(images.length - 1, prev + 1));
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-5xl p-0 flex flex-col overflow-hidden">
         <div className="flex flex-1 min-h-[500px]">
-          {/* LEFT IMAGE */}
-          <div className="w-1/2 bg-black hidden md:block">
-            <img
-              src={selectedPost.image}
-              alt="post"
-              className="w-full h-full object-contain bg-black"
-              onError={(e) => {
-                e.currentTarget.src = "/fallback.jpg";
-              }}
-            />
+          {/* LEFT IMAGE CAROUSEL */}
+          <div className="w-1/2 bg-black hidden md:block relative">
+            {images.length > 0 ? (
+              <>
+                <img
+                  src={images[currentImageIndex]}
+                  alt={`post-${currentImageIndex}`}
+                  className="w-full h-full object-contain bg-black"
+                  onError={(e) => {
+                    e.currentTarget.src = "/fallback.jpg";
+                  }}
+                />
+
+                {/* Navigation arrows */}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={goToPrevImage}
+                      disabled={currentImageIndex === 0}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button
+                      onClick={goToNextImage}
+                      disabled={currentImageIndex === images.length - 1}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+
+                    {/* Dot indicators */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {images.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentImageIndex(idx)}
+                          className={`w-2 h-2 rounded-full transition ${
+                            idx === currentImageIndex
+                              ? "bg-white"
+                              : "bg-white/50"
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Image counter */}
+                    <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                      {currentImageIndex + 1} / {images.length}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-500">
+                No image
+              </div>
+            )}
           </div>
 
           {/* RIGHT CONTENT */}
@@ -107,7 +172,8 @@ const CommentDialog = ({ open, setOpen }) => {
                 <Avatar>
                   <AvatarImage src={selectedPost.author?.profilePicture} />
                   <AvatarFallback>
-                    {selectedPost.author?.username?.charAt(0)?.toUpperCase() || "U"}
+                    {selectedPost.author?.username?.charAt(0)?.toUpperCase() ||
+                      "U"}
                   </AvatarFallback>
                 </Avatar>
 

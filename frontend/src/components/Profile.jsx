@@ -11,6 +11,8 @@ import {
   MessageCircle,
   UserPlus,
   UserCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -225,13 +227,50 @@ const Profile = () => {
               const comments = Array.isArray(post?.comments)
                 ? post.comments
                 : [];
+
+              // 🆕 Handle images array (backward compatible)
+              const images = Array.isArray(post?.images)
+                ? post.images
+                : post?.image
+                  ? [post.image]
+                  : [];
+              const hasMultipleImages = images.length > 1;
+
               return (
                 <div key={post._id} className="relative group cursor-pointer">
                   <img
-                    src={post.image}
+                    src={images[0] || "/fallback.png"}
                     alt="post"
                     className="rounded-sm aspect-square w-full object-cover"
                   />
+
+                  {/* 🆕 Multiple images indicator */}
+                  {hasMultipleImages && (
+                    <div className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          width="18"
+                          height="18"
+                          x="3"
+                          y="3"
+                          rx="2"
+                          ry="2"
+                        />
+                        <line x1="9" y1="3" x2="9" y2="21" />
+                      </svg>
+                    </div>
+                  )}
+
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition">
                     <div className="flex items-center text-white space-x-5">
                       <div className="flex items-center gap-1">

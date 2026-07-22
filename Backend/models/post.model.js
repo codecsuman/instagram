@@ -9,10 +9,13 @@ const postSchema = new mongoose.Schema(
       trim: true,
     },
 
-    image: {
-      type: String,
-      required: true,
-    },
+    // 🆕 CHANGED: single image → images array
+    images: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
 
     author: {
       type: mongoose.Schema.Types.ObjectId,
@@ -35,7 +38,7 @@ const postSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Feed sorting

@@ -10,6 +10,8 @@ import {
   Trash2,
   X,
   Flag,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
@@ -38,6 +40,9 @@ const Post = ({ post }) => {
   const [reportReason, setReportReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
 
+  // 🆕 Carousel state for multiple images
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   const userId = user?._id?.toString();
   const likes = useMemo(
     () => (Array.isArray(post?.likes) ? post.likes : []),
@@ -50,6 +55,13 @@ const Post = ({ post }) => {
   const isLiked = likes.map(String).includes(userId);
   const likeCount = likes.length;
   const isAuthor = userId === post.author?._id?.toString();
+
+  // 🆕 Handle images array (backward compatible with single image)
+  const images = Array.isArray(post?.images)
+    ? post.images
+    : post?.image
+      ? [post.image]
+      : [];
 
   const likeHandler = async () => {
     try {
@@ -137,9 +149,6 @@ const Post = ({ post }) => {
     }
   };
 
-  // ---------------------------------------------------
-  // REPORT POST
-  // ---------------------------------------------------
   const reportHandler = async () => {
     if (!reportReason.trim() || reportLoading) return;
     try {
@@ -174,6 +183,11 @@ const Post = ({ post }) => {
       toast.error("Bookmark failed");
     }
   };
+
+  const goToPrevImage = () =>
+    setCurrentImageIndex((prev) => Math.max(0, prev - 1));
+  const goToNextImage = () =>
+    setCurrentImageIndex((prev) => Math.min(images.length - 1, prev + 1));
 
   return (
     <div className="my-8 w-full max-w-sm mx-auto">
@@ -261,14 +275,58 @@ const Post = ({ post }) => {
         </Dialog>
       </div>
 
-      <img
-        className="rounded-sm my-2 w-full aspect-square object-cover"
-        src={post.image}
-        alt="post"
-        onError={(e) => {
-          e.currentTarget.src = "/fallback.png";
-        }}
-      />
+      {/* 🆕 IMAGE CAROUSEL */}
+      <div className="relative my-2 w-full aspect-square bg-black rounded-sm overflow-hidden">
+        {images.length > 0 ? (
+          <>
+            <img
+              className="w-full h-full object-contain"
+              src={images[currentImageIndex]}
+              alt={`post-${currentImageIndex}`}
+              onError={(e) => {
+                e.currentTarget.src = "/fallback.png";
+              }}
+            />
+
+            {/* Navigation arrows */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={goToPrevImage}
+                  disabled={currentImageIndex === 0}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={goToNextImage}
+                  disabled={currentImageIndex === images.length - 1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                >
+                  <ChevronRight size={20} />
+                </button>
+
+                {/* Dot indicators */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition ${
+                        idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500">
+            No image
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center justify-between my-2">
         <div className="flex items-center gap-3">
@@ -303,6 +361,10 @@ const Post = ({ post }) => {
         {post.caption}
       </p>
 
+      {images.length > 1 && (
+        <p className="text-xs text-gray-400 mt-1">{images.length} photos</p>
+      )}
+
       {comments.length > 0 && (
         <span
           className="cursor-pointer text-sm text-gray-400"
@@ -331,7 +393,7 @@ const Post = ({ post }) => {
           </div>
           <div className="mb-4">
             <img
-              src={post.image}
+              src={images[0] || "/fallback.png"}
               alt="post"
               className="w-full h-48 object-cover rounded-lg"
             />

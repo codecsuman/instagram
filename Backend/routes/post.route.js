@@ -17,8 +17,14 @@ import {
 
 const router = express.Router();
 
-/* ---------------------- ADD POST ---------------------- */
-router.post("/addpost", isAuthenticated, upload.single("image"), addNewPost);
+/* ---------------------- ADD POST (MULTIPLE IMAGES) ---------------------- */
+// 🆕 CHANGED: upload.single("image") → upload.array("images", 10)
+router.post(
+  "/addpost",
+  isAuthenticated,
+  upload.array("images", 10),
+  addNewPost,
+);
 
 /* ---------------------- FEED POSTS ---------------------- */
 router.get("/all", isAuthenticated, getAllPost);
