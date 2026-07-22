@@ -43,6 +43,9 @@ const Post = ({ post }) => {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // 🆕 double-tap-to-like animation state
+  const [showHeartAnim, setShowHeartAnim] = useState(false);
+
   const userId = user?._id?.toString();
   const likes = useMemo(
     () => (Array.isArray(post?.likes) ? post.likes : []),
@@ -62,7 +65,7 @@ const Post = ({ post }) => {
       ? [post.image]
       : [];
 
-  // Navigate to author's profile (only used by avatar/username section)
+  // Navigate to author's profile (avatar/username section only)
   const goToProfile = () => {
     if (post.author?._id) {
       navigate(`/profile/${post.author._id}`);
@@ -86,6 +89,17 @@ const Post = ({ post }) => {
     } catch (error) {
       toast.error("Error updating like");
     }
+  };
+
+  // 🆕 Double click on image → toggle like + show heart pop animation
+  const handleImageDoubleClick = () => {
+    likeHandler(); // toggles like/unlike using current isLiked state
+    setShowHeartAnim(true);
+    window.clearTimeout(handleImageDoubleClick._t);
+    handleImageDoubleClick._t = window.setTimeout(
+      () => setShowHeartAnim(false),
+      800,
+    );
   };
 
   const addComment = async () => {
@@ -197,6 +211,19 @@ const Post = ({ post }) => {
 
   return (
     <div className="my-8 w-full max-w-sm mx-auto">
+      <style>{`
+        @keyframes heartPop {
+          0% { transform: scale(0); opacity: 0; }
+          15% { transform: scale(1.25); opacity: 1; }
+          30% { transform: scale(1); opacity: 1; }
+          75% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.4); opacity: 0; }
+        }
+        .heart-pop-anim {
+          animation: heartPop 0.8s ease-in-out forwards;
+        }
+      `}</style>
+
       <div className="flex items-center justify-between">
         {/* CLICKABLE PROFILE SECTION — avatar + username only */}
         <div
@@ -285,8 +312,11 @@ const Post = ({ post }) => {
         </Dialog>
       </div>
 
-      {/* IMAGE CAROUSEL — not clickable to profile */}
-      <div className="relative my-2 w-full aspect-square bg-black rounded-sm overflow-hidden">
+      {/* IMAGE CAROUSEL — double click to like/unlike */}
+      <div
+        className="relative my-2 w-full aspect-square bg-black rounded-sm overflow-hidden select-none"
+        onDoubleClick={handleImageDoubleClick}
+      >
         {images.length > 0 ? (
           <>
             <img
@@ -296,26 +326,46 @@ const Post = ({ post }) => {
               onError={(e) => {
                 e.currentTarget.src = "/fallback.png";
               }}
+              draggable={false}
             />
+
+            {/* 🆕 Heart pop overlay */}
+            {showHeartAnim && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <FaHeart
+                  className="text-white drop-shadow-lg heart-pop-anim"
+                  size={90}
+                />
+              </div>
+            )}
 
             {images.length > 1 && (
               <>
                 <button
-                  onClick={goToPrevImage}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToPrevImage();
+                  }}
                   disabled={currentImageIndex === 0}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition z-10"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
-                  onClick={goToNextImage}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToNextImage();
+                  }}
                   disabled={currentImageIndex === images.length - 1}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full disabled:opacity-30 hover:bg-black/70 transition z-10"
                 >
                   <ChevronRight size={20} />
                 </button>
 
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                <div
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {images.map((_, idx) => (
                     <button
                       key={idx}
