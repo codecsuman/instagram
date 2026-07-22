@@ -1,5 +1,3 @@
-
-cat > README.md <<'EOF'
 <div align="center">
 
 <br />
