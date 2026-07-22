@@ -16,7 +16,7 @@ C L O N E
 
 <br />
 
-[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](https://your-live-demo-url.com)
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](instagram-beta-sage.vercel.app)
 [![Backend API](https://img.shields.io/badge/⚙️%20Backend%20API-Render-10b981?style=for-the-badge)](https://your-backend-url.com)
 [![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](https://github.com/your-username/instagram-clone)
 
