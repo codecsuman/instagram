@@ -39,10 +39,8 @@
 ## 📌 Table of Contents
 
 - [About the Project](#-about-the-project)
-- [What's New](#-whats-new-in-this-version)
 - [Features](#-features)
 - [Tech Stack](#️-tech-stack)
-- [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
 - [Environment Variables](#-environment-variables)
 - [API Reference — Notifications](#-api-reference--notifications)
@@ -54,66 +52,15 @@
 
 ## 🎯 About the Project
 
-**Instagram Clone** is a full-stack social media application built on the **MERN Stack**, letting users share photos, follow each other, like and comment on posts, chat in real time, and now — receive **persistent, real-time notifications** for every interaction.
+**Instagram Clone** is a full-stack social media application built on the **MERN Stack**, letting users share photos, follow each other, like and comment on posts, chat in real time, and receive **persistent, real-time notifications** for every interaction.
 
 > Built as a portfolio project to demonstrate full-stack development: REST API design, WebSocket-based real-time features, JWT authentication, and cloud media storage.
 
 ---
 
-## 🆕 What's New in This Version
-
-| Feature | Old | New (Updated) |
-|---|:---:|:---:|
-| Notifications System | ❌ Not available | ✅ Full notification API added |
-| Persistent Notifications | ❌ Socket-only (lost on refresh) | ✅ MongoDB + Socket dual system |
-| Real-Time Notifications | ⚠️ Partial (socket only) | ✅ Socket + REST API + Redux Persist |
-| Notification Types | ❌ Not documented | ✅ `like`, `comment`, `follow`, `message`, `post` |
-| Mark as Read | ❌ Not available | ✅ `PATCH /api/v1/notification/read` |
-| Unread Badge | ❌ Not working | ✅ Working with API sync |
-| Notification Dropdown | ❌ Broken / not showing | ✅ Fixed in `LeftSidebar` |
-
-### 🐛 Fixed Bugs
-
-| Bug | Status |
-|---|:---:|
-| Notifications disappear on page refresh | ✅ Fixed (persisted to MongoDB) |
-| Notification badge not updating | ✅ Fixed (API + Redux sync) |
-| ChatPage crash (missing `useGetConversations`) | ✅ Fixed |
-| Redux serialization warning (socket in state) | ✅ Fixed (moved to `window._socket`) |
-| Socket not accessible in Messages component | ✅ Fixed |
-| Notification dropdown empty / not opening | ✅ Fixed |
-
-### 📂 New Files Added
-
-| File | Purpose |
-|---|---|
-| `backend/models/notification.model.js` | MongoDB schema for notifications |
-| `backend/controllers/notification.controller.js` | CRUD + helper for notifications |
-| `backend/routes/notification.route.js` | REST API endpoints |
-| `frontend/src/hooks/useGetNotifications.js` | Fetch notifications from API |
-| `frontend/src/hooks/useMarkNotificationsRead.js` | Mark notifications as read |
-| `frontend/src/hooks/useGetConversations.js` | Fixes missing hook crash |
-
-### ⚙️ Updated Files
-
-| File | Change |
-|---|---|
-| `post.controller.js` | Uses `createNotification()` helper |
-| `message.controller.js` | Uses `createNotification()` helper |
-| `user.controller.js` | Uses `createNotification()` for follows |
-| `index.js` | Added `/api/v1/notification` route |
-| `rtnSlice.js` | Added `setNotifications`, proper deduplication |
-| `store.js` | Persist notifications, ignore socket serialization |
-| `App.jsx` | Removed socket from Redux, use `window._socket` |
-| `LeftSidebar.jsx` | Added `useGetNotifications()`, bell icon, proper rendering |
-| `ChatPage.jsx` | Use `window._socket` instead of Redux socket |
-| `Messages.jsx` | Use `window._socket` instead of Redux socket |
-
----
-
 ## ✨ Features
 
-### 👤 User
+### 👤 User Features
 | Feature | Description |
 |---|---|
 | 🔐 **Secure Auth** | Registration & Login with JWT-protected sessions |
@@ -121,16 +68,19 @@
 | 📸 **Post Creation** | Upload photos with captions via Cloudinary |
 | ❤️ **Like & Comment** | Real-time interaction on posts |
 | 💬 **Direct Messaging** | Real-time 1:1 chat via Socket.io |
-| 🔔 **Notifications** | Persistent, real-time alerts for likes, comments, follows, messages |
+| 🔔 **Notifications** | Persistent, real-time alerts for likes, comments, follows, messages, and posts |
+| 🗄️ **Notification History** | Notifications are saved to MongoDB and survive page refreshes |
+| ✅ **Mark as Read** | Unread badge synced with backend, mark individual or all as read |
 | 🔍 **Search & Explore** | Discover users and posts |
+| 📱 **Responsive UI** | Works smoothly across all screen sizes |
 
-### ⚙️ System
+### ⚙️ System Features
 - 🔒 JWT Authentication & protected routes
 - 🌐 RESTful API architecture
 - ⚡ Real-time updates via Socket.io
 - 🗄️ MongoDB Atlas + Redux Persist for offline-safe state
 - ☁️ Cloudinary integration for image uploads
-- 🔔 Dual notification delivery — Socket (instant) + REST (persistent)
+- 🔔 Dual notification delivery — Socket (instant) + REST API (persistent)
 
 ---
 
@@ -149,44 +99,6 @@
 │  File Upload    │  Multer · Cloudinary                      │
 │  Deployment     │  Vercel (FE) · Render (BE)                │
 └─────────────────┴───────────────────────────────────────────┘
-```
-
----
-
-## 📁 Project Structure
-
-```
-instagram-clone/
-│
-├── 📂 frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   │   ├── useGetNotifications.js
-│   │   │   ├── useMarkNotificationsRead.js
-│   │   │   └── useGetConversations.js
-│   │   ├── redux/
-│   │   │   ├── rtnSlice.js
-│   │   │   └── store.js
-│   │   └── utils/
-│   └── package.json
-│
-├── 📂 backend/
-│   ├── controllers/
-│   │   ├── notification.controller.js
-│   │   ├── post.controller.js
-│   │   ├── message.controller.js
-│   │   └── user.controller.js
-│   ├── models/
-│   │   └── notification.model.js
-│   ├── routes/
-│   │   └── notification.route.js
-│   ├── middleware/
-│   ├── index.js
-│   └── package.json
-│
-└── README.md
 ```
 
 ---
@@ -271,7 +183,7 @@ VITE_API_URL=http://localhost:8000/api/v1
 
 **Notification Types:** `like` · `comment` · `follow` · `message` · `post`
 
-Notifications are created server-side via a shared `createNotification()` helper, saved to MongoDB for persistence, and emitted instantly over Socket.io so the client updates in real time — then stay available after a page refresh.
+Notifications are created server-side via a shared `createNotification()` helper, saved to MongoDB for persistence, and emitted instantly over Socket.io so the client updates in real time.
 
 ---
 
@@ -304,13 +216,14 @@ Notifications are created server-side via a shared `createNotification()` helper
 
 <br/>
 
-**Your Name**
+**Suman Jhanp**
 
 *MERN Stack Developer | Full-Stack Enthusiast*
 
 <br/>
 
-[![GitHub](https://img.shields.io/badge/GitHub-your--username-1f2937?style=for-the-badge&logo=github)](https://github.com/your-username)
+[![GitHub](https://img.shields.io/badge/GitHub-codecsuman-1f2937?style=for-the-badge&logo=github)](https://github.com/codecsuman)
+[![Portfolio](https://img.shields.io/badge/Portfolio-sumanjhanp.netlify.app-f59e0b?style=for-the-badge&logo=netlify)](https://sumanjhanp.netlify.app)
 
 </div>
 
@@ -342,6 +255,8 @@ If this project helped you or sparked an idea — drop a ⭐ on the repo!
 
 <br/>
 
-**Happy Coding 🚀**
+**Made with ❤️ by Suman Jhanp**
+
+*Happy Coding 🚀*
 
 </div>
