@@ -16,9 +16,8 @@ C L O N E
 
 <br />
 
-[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](instagram-beta-sage.vercel.app)
-[![Backend API](https://img.shields.io/badge/⚙️%20Backend%20API-Render-10b981?style=for-the-badge)](https://your-backend-url.com)
-[![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](https://github.com/your-username/instagram-clone)
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](https://instagram-beta-sage.vercel.app/)
+[![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](https://github.com/codecsuman/instagram)
 
 <br />
 
@@ -60,6 +59,9 @@ C L O N E
 **Instagram Clone** is a full-stack social media application built with the **MERN Stack**. It allows users to share photos, follow each other, like and comment on posts, chat in real time, and receive **persistent real-time notifications** for every important interaction.
 
 > Built as a portfolio project to demonstrate full-stack development, REST API design, JWT authentication, WebSocket-based real-time features, and cloud media storage.
+
+🔗 **Live App:** [instagram-beta-sage.vercel.app](https://instagram-beta-sage.vercel.app/)
+📂 **Source Code:** [github.com/codecsuman/instagram](https://github.com/codecsuman/instagram)
 
 ---
 
@@ -128,8 +130,8 @@ You will also need accounts for:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/instagram-clone.git
-cd instagram-clone
+git clone https://github.com/codecsuman/instagram.git
+cd instagram
 ```
 
 ### 2. Backend Setup
@@ -238,7 +240,7 @@ Both the follower and the target user listen for the `follow-update` Socket.io e
 
 | Layer | Platform |
 |---|---|
-| 🌐 Frontend | [Vercel](https://vercel.com) |
+| 🌐 Frontend | [Vercel](https://vercel.com) — [Live App](https://instagram-beta-sage.vercel.app/) |
 | ⚙️ Backend | [Render](https://render.com) |
 | 🗄️ Database | [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) |
 | 🖼️ Media Storage | [Cloudinary](https://cloudinary.com) |
@@ -307,5 +309,3 @@ If this project helped you or sparked an idea, consider dropping a ⭐ on the re
 *Happy Coding 🚀*
 
 </div>
-
-
