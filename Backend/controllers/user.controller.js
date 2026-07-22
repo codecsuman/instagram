@@ -223,9 +223,34 @@ export const getProfile = async (req, res) => {
       });
     }
 
+    // 🆕 MIGRATE OLD POSTS ON-THE-FLY: Convert image → images for response
+    const migratePosts = (posts) => {
+      if (!Array.isArray(posts)) return [];
+      return posts.map((post) => {
+        const postObj = post.toObject ? post.toObject() : post;
+
+        // If old post has 'image' but no 'images', convert it
+        if (postObj.image && (!postObj.images || postObj.images.length === 0)) {
+          postObj.images = [postObj.image];
+        }
+        // If no images at all, set empty array
+        if (!postObj.images) {
+          postObj.images = [];
+        }
+
+        return postObj;
+      });
+    };
+
+    const responseUser = {
+      ...user.toObject(),
+      posts: migratePosts(user.posts),
+      bookmarks: migratePosts(user.bookmarks),
+    };
+
     return res.status(200).json({
       success: true,
-      user,
+      user: responseUser,
     });
   } catch (error) {
     console.error("GET PROFILE ERROR:", error.message);
@@ -235,7 +260,6 @@ export const getProfile = async (req, res) => {
     });
   }
 };
-
 // --------------------------------------------------
 // EDIT PROFILE
 // --------------------------------------------------

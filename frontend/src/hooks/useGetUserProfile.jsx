@@ -33,7 +33,10 @@ const useGetUserProfile = (userId) => {
       } catch (error) {
         if (!isMounted) return;
 
-        console.error("❌ Error loading user profile:", error);
+        console.error(
+          "❌ Error loading user profile:",
+          error?.response?.data?.message || error.message,
+        );
         dispatch(setUserProfile(null));
       } finally {
         if (isMounted) {

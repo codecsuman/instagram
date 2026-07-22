@@ -8,6 +8,18 @@ import { createNotification } from "./notification.controller.js";
 import { io } from "../socket/socket.js";
 
 /* -------------------------------------------
+   HELPER: Migrate old posts (image → images)
+-------------------------------------------- */
+const migratePost = (post) => {
+  const postObj = post.toObject ? post.toObject() : post;
+  if (postObj.image && (!postObj.images || postObj.images.length === 0)) {
+    postObj.images = [postObj.image];
+  }
+  if (!postObj.images) postObj.images = [];
+  return postObj;
+};
+
+/* -------------------------------------------
    ADD NEW POST + FOLLOWER NOTIFICATION
    🆕 SUPPORTS MULTIPLE IMAGES (carousel)
 -------------------------------------------- */
@@ -16,7 +28,6 @@ export const addNewPost = async (req, res) => {
     const { caption = "" } = req.body;
     const authorId = req.id;
 
-    // 🆕 Handle multiple files (multer .array("images", 10))
     const files = req.files;
 
     if (!files || files.length === 0) {
@@ -33,7 +44,6 @@ export const addNewPost = async (req, res) => {
       });
     }
 
-    // 🆕 Upload all images to Cloudinary
     const uploadedImages = [];
 
     for (const file of files) {
@@ -58,7 +68,7 @@ export const addNewPost = async (req, res) => {
 
     const post = await Post.create({
       caption: caption.trim(),
-      images: uploadedImages, // 🆕 Array of image URLs
+      images: uploadedImages,
       author: authorId,
       comments: [],
       likes: [],
@@ -79,7 +89,6 @@ export const addNewPost = async (req, res) => {
         },
       });
 
-    // Notify all followers
     const author = await User.findById(authorId).select(
       "username profilePicture followers",
     );
@@ -115,7 +124,7 @@ export const addNewPost = async (req, res) => {
 };
 
 /* -------------------------------------------
-   GET ALL POSTS (FEED)
+   GET ALL POSTS (FEED) — WITH MIGRATION
 -------------------------------------------- */
 export const getAllPost = async (req, res) => {
   try {
@@ -131,9 +140,12 @@ export const getAllPost = async (req, res) => {
         },
       });
 
+    // 🆕 Migrate old posts (image → images)
+    const migratedPosts = posts.map(migratePost);
+
     return res.status(200).json({
       success: true,
-      posts,
+      posts: migratedPosts,
     });
   } catch (error) {
     console.error("GET ALL POSTS ERROR:", error.message);
@@ -145,7 +157,7 @@ export const getAllPost = async (req, res) => {
 };
 
 /* -------------------------------------------
-   GET LOGGED-IN USER POSTS
+   GET LOGGED-IN USER POSTS — WITH MIGRATION
 -------------------------------------------- */
 export const getUserPost = async (req, res) => {
   try {
@@ -163,9 +175,12 @@ export const getUserPost = async (req, res) => {
         },
       });
 
+    // 🆕 Migrate old posts (image → images)
+    const migratedPosts = posts.map(migratePost);
+
     return res.status(200).json({
       success: true,
-      posts,
+      posts: migratedPosts,
     });
   } catch (error) {
     console.error("GET USER POSTS ERROR:", error.message);
