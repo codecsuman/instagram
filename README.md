@@ -1,4 +1,4 @@
-```bash
+
 cat > README.md <<'EOF'
 <div align="center">
 
@@ -309,5 +309,5 @@ If this project helped you or sparked an idea, consider dropping a ⭐ on the re
 *Happy Coding 🚀*
 
 </div>
-EOF
-```
+
+
