@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   notifications: [],
   unreadCount: 0,
+  loading: false,
 };
 
 const rtnSlice = createSlice({
@@ -10,63 +11,84 @@ const rtnSlice = createSlice({
   initialState,
 
   reducers: {
+    // --------------------------
+    // SET NOTIFICATIONS (from API)
+    // --------------------------
+    setNotifications: (state, action) => {
+      const notis = Array.isArray(action.payload) ? action.payload : [];
+      state.notifications = notis.map((n) => ({
+        ...n,
+        uniqueKey:
+          n._id || `${n.type}-${n.userId}-${Date.now()}-${Math.random()}`,
+      }));
+    },
+
+    // --------------------------
+    // ADD SINGLE NOTIFICATION (from socket)
+    // --------------------------
     setLikeNotification: (state, action) => {
       const noti = action.payload;
       if (!noti) return;
 
-      const uniqueKey = `${noti.type}-${noti.userId}-${noti.postId || ""}-${Date.now()}`;
-
+      // Prevent duplicates by _id
       const alreadyExist = state.notifications.some(
-        (item) =>
-          item.userId === noti.userId &&
-          item.type === noti.type &&
-          item.postId === noti.postId,
+        (item) => item._id && item._id === noti._id,
       );
 
-      // ADD notification
-      if (
-        ["like", "comment", "follow", "message", "post"].includes(noti.type)
-      ) {
-        if (!alreadyExist) {
-          state.notifications.unshift({
-            ...noti,
-            uniqueKey,
-            createdAt: Date.now(),
-          });
-          state.unreadCount += 1;
-        }
-      }
-
-      // REMOVE notification (for dislike)
-      if (["dislike"].includes(noti.type)) {
-        const before = state.notifications.length;
-        state.notifications = state.notifications.filter(
-          (item) =>
-            !(
-              item.userId === noti.userId &&
-              item.type === "like" &&
-              item.postId === noti.postId
-            ),
-        );
-        const after = state.notifications.length;
-        if (after < before && state.unreadCount > 0) {
-          state.unreadCount -= 1;
-        }
+      if (!alreadyExist) {
+        state.notifications.unshift({
+          ...noti,
+          uniqueKey:
+            noti._id ||
+            `${noti.type}-${noti.userId}-${Date.now()}-${Math.random()}`,
+          createdAt: noti.createdAt || Date.now(),
+        });
+        state.unreadCount += 1;
       }
     },
 
+    // --------------------------
+    // MARK ALL AS READ
+    // --------------------------
     markAllRead: (state) => {
       state.unreadCount = 0;
+      state.notifications = state.notifications.map((n) => ({
+        ...n,
+        read: true,
+      }));
     },
 
+    // --------------------------
+    // CLEAR ALL
+    // --------------------------
     clearNotifications: (state) => {
       state.notifications = [];
       state.unreadCount = 0;
     },
+
+    // --------------------------
+    // SET UNREAD COUNT ONLY
+    // --------------------------
+    setUnreadCount: (state, action) => {
+      state.unreadCount = Number(action.payload) || 0;
+    },
+
+    // --------------------------
+    // SET LOADING
+    // --------------------------
+    setNotificationsLoading: (state, action) => {
+      state.loading = Boolean(action.payload);
+    },
   },
 });
 
-export const { setLikeNotification, markAllRead, clearNotifications } =
-  rtnSlice.actions;
+export const {
+  setNotifications,
+  setLikeNotification,
+  markAllRead,
+  clearNotifications,
+  setUnreadCount,
+  setNotificationsLoading,
+} = rtnSlice.actions;
 
 export default rtnSlice.reducer;

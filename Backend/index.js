@@ -17,6 +17,7 @@ import { app, server } from "./socket/socket.js";
 import conversationRoute from "./routes/conversation.route.js";
 import exploreRoute from "./routes/explore.route.js";
 import messageRoute from "./routes/message.route.js";
+import notificationRoute from "./routes/notification.route.js"; // 🆕 NEW
 import postRoute from "./routes/post.route.js";
 import reportRoute from "./routes/report.route.js";
 import searchRoute from "./routes/search.route.js";
@@ -116,6 +117,7 @@ app.use("/api/v1/conversation", conversationRoute);
 app.use("/api/v1/search", searchRoute);
 app.use("/api/v1/explore", exploreRoute);
 app.use("/api/v1/report", reportRoute);
+app.use("/api/v1/notification", notificationRoute); // 🆕 NEW
 
 // -------------------------
 // 404 HANDLER

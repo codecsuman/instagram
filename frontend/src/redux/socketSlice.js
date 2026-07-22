@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  socket: null,
+  socket: null, // Still here for runtime, but NOT persisted
   onlineUsers: [],
   isConnected: false,
   socketId: null,
@@ -13,6 +13,7 @@ const socketSlice = createSlice({
   initialState,
   reducers: {
     setSocket: (state, action) => {
+      // Store only what we need, not the full socket object
       state.socket = action.payload;
     },
 

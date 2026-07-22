@@ -1,7 +1,7 @@
 // Backend/controllers/message.controller.js
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
-import { User } from "../models/user.model.js";
+import { createNotification } from "./notification.controller.js";
 import { io } from "../socket/socket.js";
 
 /* --------------------------------------------------------
@@ -37,7 +37,6 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    // 🆕 conversationId is now included — this was the missing required field
     const newMessage = await Message.create({
       senderId,
       receiverId,
@@ -54,19 +53,15 @@ export const sendMessage = async (req, res) => {
     // Socket: Send message in real-time
     io.to(receiverId.toString()).emit("newMessage", newMessage);
 
-    // Real-time message notification
-    const sender = await User.findById(senderId).select(
-      "username profilePicture",
-    );
-    const notification = {
+    // Create persistent notification
+    await createNotification({
+      io,
+      recipientId: receiverId,
+      senderId,
       type: "message",
-      userId: senderId,
-      userDetails: sender,
-      postId: null,
-      message: "sent you a message",
-    };
+      messageText: "sent you a message",
+    });
 
-    io.to(receiverId.toString()).emit("notification", notification);
     console.log(`📢 Message notification sent to user ${receiverId}`);
 
     return res.status(201).json({

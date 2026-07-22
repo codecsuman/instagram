@@ -5,43 +5,43 @@ import { setConversations, setConversationsLoading } from "@/redux/chatSlice";
 
 const useGetConversations = () => {
   const dispatch = useDispatch();
-  const userId = useSelector((state) => state.auth.user?._id);
+  const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (!userId) {
+    if (!user?._id) {
       dispatch(setConversations([]));
       return;
     }
 
-    const controller = new AbortController();
+    let isMounted = true;
 
     const fetchConversations = async () => {
       try {
         dispatch(setConversationsLoading(true));
 
-        const res = await api.get("/conversation/all", {
-          signal: controller.signal,
-        });
+        const res = await api.get("/conversation/all");
+
+        if (!isMounted) return;
 
         if (res.data.success) {
           dispatch(setConversations(res.data.conversations || []));
         }
       } catch (error) {
-        if (error.name === "CanceledError" || error.name === "AbortError") {
-          return;
-        }
+        if (!isMounted) return;
         console.error("❌ Error loading conversations:", error);
       } finally {
-        dispatch(setConversationsLoading(false));
+        if (isMounted) {
+          dispatch(setConversationsLoading(false));
+        }
       }
     };
 
     fetchConversations();
 
     return () => {
-      controller.abort();
+      isMounted = false;
     };
-  }, [dispatch, userId]);
+  }, [dispatch, user?._id]);
 };
 
 export default useGetConversations;

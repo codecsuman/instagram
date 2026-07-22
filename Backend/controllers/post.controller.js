@@ -4,6 +4,7 @@ import cloudinary from "../utils/cloudinary.js";
 import { Comment } from "../models/comment.model.js";
 import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
+import { createNotification } from "./notification.controller.js";
 import { io } from "../socket/socket.js";
 
 /* -------------------------------------------
@@ -61,28 +62,22 @@ export const addNewPost = async (req, res) => {
         },
       });
 
-    // 🆕 Notify all followers that this user posted a new photo
+    // Notify all followers
     const author = await User.findById(authorId).select(
       "username profilePicture followers",
     );
 
     if (author?.followers?.length > 0) {
-      const notification = {
-        type: "post",
-        userId: authorId,
-        userDetails: {
-          username: author.username,
-          profilePicture: author.profilePicture,
-        },
-        postId: post._id,
-        postImage: post.image,
-        message: "posted a new photo",
-      };
-
-      author.followers.forEach((followerId) => {
-        io.to(followerId.toString()).emit("notification", notification);
-      });
-
+      for (const followerId of author.followers) {
+        await createNotification({
+          io,
+          recipientId: followerId,
+          senderId: authorId,
+          type: "post",
+          postId: post._id,
+          messageText: "posted a new photo",
+        });
+      }
       console.log(
         `📢 New post notification sent to ${author.followers.length} followers`,
       );
@@ -165,7 +160,7 @@ export const getUserPost = async (req, res) => {
 };
 
 /* -------------------------------------------
-   LIKE POST + NOTIFICATION
+   LIKE POST + NOTIFICATION (FIXED)
 -------------------------------------------- */
 export const likePost = async (req, res) => {
   try {
@@ -187,22 +182,19 @@ export const likePost = async (req, res) => {
     if (!alreadyLiked) {
       post.likes.push(likerId);
       await post.save();
-    }
 
-    const user = await User.findById(likerId).select("username profilePicture");
-    const postOwnerId = post.author.toString();
-
-    if (postOwnerId !== likerId.toString()) {
-      const notification = {
-        type: "like",
-        userId: likerId,
-        userDetails: user,
-        postId,
-        message: "liked your post",
-      };
-
-      io.to(postOwnerId).emit("notification", notification);
-      console.log(`📢 Like notification sent to user ${postOwnerId}`);
+      // Send notification to post owner (if not self-like)
+      const postOwnerId = post.author.toString();
+      if (postOwnerId !== likerId.toString()) {
+        await createNotification({
+          io,
+          recipientId: postOwnerId,
+          senderId: likerId,
+          type: "like",
+          postId,
+          messageText: "liked your post",
+        });
+      }
     }
 
     return res.status(200).json({
@@ -291,25 +283,20 @@ export const addComment = async (req, res) => {
     post.comments.push(comment._id);
     await post.save();
 
-    const commenter = await User.findById(commenterId).select(
-      "username profilePicture",
-    );
+    // Send notification to post owner (if not self-comment)
     const postOwnerId = post.author.toString();
-
     if (postOwnerId !== commenterId.toString()) {
-      const notification = {
+      await createNotification({
+        io,
+        recipientId: postOwnerId,
+        senderId: commenterId,
         type: "comment",
-        userId: commenterId,
-        userDetails: commenter,
         postId,
-        message: "commented on your post",
-      };
-
-      io.to(postOwnerId).emit("notification", notification);
-      console.log(`📢 Comment notification sent to user ${postOwnerId}`);
+        messageText: "commented on your post",
+      });
     }
 
-    // 🆕 Broadcast new comment to everyone viewing the feed (live update)
+    // Broadcast new comment to everyone viewing the feed
     io.emit("newComment", {
       postId,
       comment: populatedComment,

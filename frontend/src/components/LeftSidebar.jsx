@@ -10,6 +10,7 @@ import {
   UserPlus,
   MessageSquare,
   Image as ImageIcon,
+  Bell,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { toast } from "sonner";
@@ -24,10 +25,16 @@ import {
 import CreatePost from "./CreatePost";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
-import { clearNotifications, markAllRead } from "@/redux/rtnSlice";
+import {
+  clearNotifications,
+  markAllRead,
+  setUnreadCount,
+} from "@/redux/rtnSlice";
 import { clearOnlineUsers } from "@/redux/socketSlice";
 import { setMessages, setSelectedChatUser } from "@/redux/chatSlice";
 import { setPosts, setSelectedPost } from "@/redux/postSlice";
+import useGetNotifications from "@/hooks/useGetNotifications";
+import useMarkNotificationsRead from "@/hooks/useMarkNotificationsRead";
 
 const LeftSidebar = () => {
   const navigate = useNavigate();
@@ -35,12 +42,15 @@ const LeftSidebar = () => {
   const dispatch = useDispatch();
 
   const { user } = useSelector((store) => store.auth);
-
   const { notifications = [], unreadCount = 0 } = useSelector(
     (store) => store.realTimeNotification,
   );
 
   const [openCreate, setOpenCreate] = useState(false);
+
+  // Fetch notifications on mount
+  useGetNotifications();
+  const { markAsRead } = useMarkNotificationsRead();
 
   const logoutHandler = async () => {
     try {
@@ -109,7 +119,17 @@ const LeftSidebar = () => {
       case "post":
         return <ImageIcon className="h-4 w-4 text-orange-500" />;
       default:
-        return <Heart className="h-4 w-4 text-red-500 fill-red-500" />;
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const handleNotifClick = (notif) => {
+    if (notif.type === "follow") {
+      navigate(`/profile/${notif.userId}`);
+    } else if (notif.type === "message") {
+      navigate("/chat");
+    } else if (notif.postId) {
+      navigate(`/profile/${notif.userId}`);
     }
   };
 
@@ -160,11 +180,10 @@ const LeftSidebar = () => {
             </button>
           ))}
 
-          {/* NOTIFICATIONS */}
+          {/* NOTIFICATIONS POPOVER */}
           <Popover
             onOpenChange={(open) => {
-              // Only mark as read (reset badge) — never wipe the list on open
-              if (open) dispatch(markAllRead());
+              if (open) markAsRead();
             }}
           >
             <PopoverTrigger asChild>
@@ -172,76 +191,95 @@ const LeftSidebar = () => {
                 type="button"
                 className="flex items-center gap-3 hover:bg-gray-100 rounded-lg cursor-pointer p-3 my-1 relative text-left w-full transition-all duration-200"
               >
-                <Heart size={22} />
+                <Bell size={22} />
                 <span>Notifications</span>
 
                 {unreadCount > 0 && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    className="absolute right-3 top-2 h-5 w-5 rounded-full bg-red-600 text-[10px] hover:bg-red-600"
-                  >
-                    {unreadCount}
-                  </Button>
+                  <span className="absolute right-3 top-2 h-5 w-5 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center font-bold">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
                 )}
               </button>
             </PopoverTrigger>
 
-            <PopoverContent className="w-80 max-h-[400px] overflow-y-auto">
-              <h3 className="font-semibold text-sm mb-3">Notifications</h3>
+            <PopoverContent className="w-80 max-h-[400px] overflow-y-auto p-0">
+              <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Notifications</h3>
+                {notifications.length > 0 && (
+                  <button
+                    onClick={() => dispatch(clearNotifications())}
+                    className="text-xs text-red-500 hover:text-red-700"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+
               {notifications.length === 0 ? (
                 <div className="text-center py-6">
-                  <Heart className="h-10 w-10 mx-auto mb-2 text-gray-200" />
+                  <Bell className="h-10 w-10 mx-auto mb-2 text-gray-200" />
                   <p className="text-sm text-gray-500">No notifications yet</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-1 px-4">
                     When someone likes, comments, follows, messages, or posts,
                     you'll see it here
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col">
                   {notifications.map((notif, idx) => (
                     <div
-                      key={notif.uniqueKey || idx}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition cursor-pointer"
-                      onClick={() => {
-                        if (notif.type === "follow") {
-                          navigate(`/profile/${notif.userId}`);
-                        } else if (notif.type === "message") {
-                          navigate("/chat");
-                        } else if (notif.postId) {
-                          navigate(`/profile/${notif.userId}`);
-                        }
-                      }}
+                      key={notif.uniqueKey || notif._id || idx}
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-0 ${
+                        !notif.read ? "bg-blue-50/30" : ""
+                      }`}
+                      onClick={() => handleNotifClick(notif)}
                     >
-                      <Avatar className="w-9 h-9">
+                      <Avatar className="w-9 h-9 shrink-0">
                         <AvatarImage
-                          src={notif.userDetails?.profilePicture || ""}
+                          src={
+                            notif.userDetails?.profilePicture ||
+                            notif.sender?.profilePicture ||
+                            ""
+                          }
                           alt="user"
                         />
                         <AvatarFallback>
-                          {notif.userDetails?.username
-                            ?.charAt(0)
-                            ?.toUpperCase() || "U"}
+                          {(
+                            notif.userDetails?.username ||
+                            notif.sender?.username ||
+                            "U"
+                          )
+                            .charAt(0)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
 
-                      <p className="text-sm leading-5 flex-1">
-                        <span className="font-semibold">
-                          {notif.userDetails?.username || "Someone"}
-                        </span>{" "}
-                        {notif.message || "liked your post"}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-5">
+                          <span className="font-semibold">
+                            {notif.userDetails?.username ||
+                              notif.sender?.username ||
+                              "Someone"}
+                          </span>{" "}
+                          {notif.message || "sent a notification"}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {notif.createdAt
+                            ? new Date(notif.createdAt).toLocaleDateString()
+                            : "Just now"}
+                        </p>
+                      </div>
 
-                      {notif.type === "post" && notif.postImage && (
-                        <img
-                          src={notif.postImage}
-                          alt="post"
-                          className="w-9 h-9 rounded object-cover"
-                        />
-                      )}
+                      {notif.type === "post" &&
+                        (notif.postImage || notif.post?.image) && (
+                          <img
+                            src={notif.postImage || notif.post?.image}
+                            alt="post"
+                            className="w-9 h-9 rounded object-cover shrink-0"
+                          />
+                        )}
 
-                      {getNotifIcon(notif.type)}
+                      <div className="shrink-0">{getNotifIcon(notif.type)}</div>
                     </div>
                   ))}
                 </div>

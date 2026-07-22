@@ -94,14 +94,14 @@ function App() {
     });
 
     socketRef.current = socket;
-    window._socket = socket;
+    window._socket = socket; // Global reference for components
 
     // ONLINE USERS
     socket.on("getOnlineUsers", (users) => {
       dispatch(setOnlineUsers(Array.isArray(users) ? users : []));
     });
 
-    // 🆕 REAL-TIME NOTIFICATIONS — now shows an in-app toast, Instagram-style
+    // REAL-TIME NOTIFICATIONS
     socket.on("notification", (notification) => {
       if (!notification) return;
 
@@ -110,7 +110,6 @@ function App() {
       const username = notification.userDetails?.username || "Someone";
       const text = notification.message || "sent a notification";
 
-      // Skip toast for your own actions (safety net, shouldn't normally fire)
       toast(`${username} ${text}`, {
         description:
           notification.type === "message"
@@ -120,7 +119,7 @@ function App() {
       });
     });
 
-    // REAL-TIME COMMENT BROADCAST (live update for anyone viewing the post)
+    // REAL-TIME COMMENT BROADCAST
     socket.on("newComment", ({ postId, comment }) => {
       if (postId && comment) {
         dispatch(addCommentToPost({ postId, comment }));

@@ -12,18 +12,16 @@ const Messages = ({ selectedUser }) => {
 
   const { messages, loading } = useSelector((store) => store.chat);
   const { user } = useSelector((store) => store.auth);
-  const socket = useSelector((state) => state.socket.socket);
+
+  // FIXED: Use window._socket instead of Redux socket (avoids serialization error)
+  const socket = window._socket || null;
 
   const bottomRef = useRef(null);
 
-  // -----------------------------------------
-  // REAL-TIME LISTENER
-  // -----------------------------------------
+  // Real-time listener
   useGetRTM(socket);
 
-  // -----------------------------------------
-  // LOAD MESSAGES WHEN CHAT USER CHANGES
-  // -----------------------------------------
+  // Load messages when chat user changes
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedUser?._id) return;
@@ -47,9 +45,7 @@ const Messages = ({ selectedUser }) => {
     fetchMessages();
   }, [selectedUser?._id, dispatch]);
 
-  // -----------------------------------------
-  // AUTO SCROLL TO BOTTOM
-  // -----------------------------------------
+  // Auto scroll to bottom
   useEffect(() => {
     const timer = setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,7 +91,9 @@ const Messages = ({ selectedUser }) => {
         {!loading &&
           messages.map((msg) => {
             const senderId =
-              typeof msg.senderId === "object" ? msg.senderId?._id : msg.senderId;
+              typeof msg.senderId === "object"
+                ? msg.senderId?._id
+                : msg.senderId;
 
             const fromMe = senderId?.toString() === user?._id?.toString();
 

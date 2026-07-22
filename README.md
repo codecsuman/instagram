@@ -1,166 +1,189 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram Clone" height="40"/>
+<br/>
 
-# 📸 InstaApp — Instagram Clone
+```
+██╗███╗   ██╗███████╗████████╗ █████╗  ██████╗ ██████╗  █████╗ ███╗   ███╗
+██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
+██║██╔██╗ ██║███████╗   ██║   ███████║██║  ███╗██████╔╝███████║██╔████╔██║
+██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║   ██║██╔══██╗██╔══██║██║╚██╔╝██║
+██║██║ ╚████║███████║   ██║   ██║  ██║╚██████╔╝██║  ██║██║  ██║██║ ╚═╝ ██║
+╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
+                              C L O N E
+```
 
-**A full-featured social media platform built with the MERN Stack**  
-Authentication · Posts · Real-Time Chat · Follow System · Image Uploads
+### *Share moments. Connect instantly. Built on the MERN Stack.*
 
 <br/>
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Frontend-6366f1?style=for-the-badge)](https://instagram-ohuy.vercel.app/)
-[![Backend](https://img.shields.io/badge/⚙️_Backend-API-10b981?style=for-the-badge)](https://instagram-2-jhsg.onrender.com)
-[![GitHub](https://img.shields.io/badge/📂_Source-GitHub-0f172a?style=for-the-badge&logo=github)](https://github.com/codecsuman/instagram)
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](#)
+[![Backend API](https://img.shields.io/badge/⚙️%20Backend%20API-Render-10b981?style=for-the-badge)](#)
+[![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](#)
 
 <br/>
 
-![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=flat-square&logo=mongodb&logoColor=white)
-![Express](https://img.shields.io/badge/Express.js-000000?style=flat-square&logo=express&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![Redux](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
-![Redux](https://img.shields.io/badge/Redux-764ABC?style=flat-square&logo=redux&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=flat-square&logo=mongodb&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat-square&logo=socket.io&logoColor=white)
-![Tailwind](https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
 
 </div>
 
 ---
 
-## ✨ Features at a Glance
+## 📌 Table of Contents
 
-| 🔐 Auth | 👤 Profile | 📷 Posts | 💬 Chat | ❤️ Social |
-|:---:|:---:|:---:|:---:|:---:|
-| JWT + HTTP-Only Cookies | Edit & Upload Avatar | Create, Like, Comment | Real-Time 1-on-1 | Follow / Unfollow |
-| Secure Registration | View Other Profiles | Delete Own Posts | Socket.io Powered | User Suggestions |
-| Protected Routes | Follow Tracking | Image Uploads | Online Status | Like System |
-| Auto Logout | Public Profile Pages | Feed View | Message History | Comment Threads |
+- [About the Project](#-about-the-project)
+- [What's New](#-whats-new-in-this-version)
+- [Features](#-features)
+- [Tech Stack](#️-tech-stack)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [API Reference — Notifications](#-api-reference--notifications)
+- [Deployment](#-deployment)
+- [Future Enhancements](#-future-enhancements)
+- [Author](#-author)
+
+---
+
+## 🎯 About the Project
+
+**Instagram Clone** is a full-stack social media application built on the **MERN Stack**, letting users share photos, follow each other, like and comment on posts, chat in real time, and now — receive **persistent, real-time notifications** for every interaction.
+
+> Built as a portfolio project to demonstrate full-stack development: REST API design, WebSocket-based real-time features, JWT authentication, and cloud media storage.
+
+---
+
+## 🆕 What's New in This Version
+
+| Feature | Old | New (Updated) |
+|---|:---:|:---:|
+| Notifications System | ❌ Not available | ✅ Full notification API added |
+| Persistent Notifications | ❌ Socket-only (lost on refresh) | ✅ MongoDB + Socket dual system |
+| Real-Time Notifications | ⚠️ Partial (socket only) | ✅ Socket + REST API + Redux Persist |
+| Notification Types | ❌ Not documented | ✅ `like`, `comment`, `follow`, `message`, `post` |
+| Mark as Read | ❌ Not available | ✅ `PATCH /api/v1/notification/read` |
+| Unread Badge | ❌ Not working | ✅ Working with API sync |
+| Notification Dropdown | ❌ Broken / not showing | ✅ Fixed in `LeftSidebar` |
+
+### 🐛 Fixed Bugs
+
+| Bug | Status |
+|---|:---:|
+| Notifications disappear on page refresh | ✅ Fixed (persisted to MongoDB) |
+| Notification badge not updating | ✅ Fixed (API + Redux sync) |
+| ChatPage crash (missing `useGetConversations`) | ✅ Fixed |
+| Redux serialization warning (socket in state) | ✅ Fixed (moved to `window._socket`) |
+| Socket not accessible in Messages component | ✅ Fixed |
+| Notification dropdown empty / not opening | ✅ Fixed |
+
+### 📂 New Files Added
+
+| File | Purpose |
+|---|---|
+| `backend/models/notification.model.js` | MongoDB schema for notifications |
+| `backend/controllers/notification.controller.js` | CRUD + helper for notifications |
+| `backend/routes/notification.route.js` | REST API endpoints |
+| `frontend/src/hooks/useGetNotifications.js` | Fetch notifications from API |
+| `frontend/src/hooks/useMarkNotificationsRead.js` | Mark notifications as read |
+| `frontend/src/hooks/useGetConversations.js` | Fixes missing hook crash |
+
+### ⚙️ Updated Files
+
+| File | Change |
+|---|---|
+| `post.controller.js` | Uses `createNotification()` helper |
+| `message.controller.js` | Uses `createNotification()` helper |
+| `user.controller.js` | Uses `createNotification()` for follows |
+| `index.js` | Added `/api/v1/notification` route |
+| `rtnSlice.js` | Added `setNotifications`, proper deduplication |
+| `store.js` | Persist notifications, ignore socket serialization |
+| `App.jsx` | Removed socket from Redux, use `window._socket` |
+| `LeftSidebar.jsx` | Added `useGetNotifications()`, bell icon, proper rendering |
+| `ChatPage.jsx` | Use `window._socket` instead of Redux socket |
+| `Messages.jsx` | Use `window._socket` instead of Redux socket |
+
+---
+
+## ✨ Features
+
+### 👤 User
+| Feature | Description |
+|---|---|
+| 🔐 **Secure Auth** | Registration & Login with JWT-protected sessions |
+| 🖼️ **Profile Management** | Bio, profile picture, followers/following |
+| 📸 **Post Creation** | Upload photos with captions via Cloudinary |
+| ❤️ **Like & Comment** | Real-time interaction on posts |
+| 💬 **Direct Messaging** | Real-time 1:1 chat via Socket.io |
+| 🔔 **Notifications** | Persistent, real-time alerts for likes, comments, follows, messages |
+| 🔍 **Search & Explore** | Discover users and posts |
+
+### ⚙️ System
+- 🔒 JWT Authentication & protected routes
+- 🌐 RESTful API architecture
+- ⚡ Real-time updates via Socket.io
+- 🗄️ MongoDB Atlas + Redux Persist for offline-safe state
+- ☁️ Cloudinary integration for image uploads
+- 🔔 Dual notification delivery — Socket (instant) + REST (persistent)
 
 ---
 
 ## 🛠️ Tech Stack
 
-<table>
-<tr>
-<td valign="top" width="33%">
-
-### 🎨 Frontend
-- ⚛️ **React.js** (Vite)
-- 🎯 **Redux Toolkit**
-- 🌐 **Axios**
-- 🎨 **Tailwind CSS**
-- 🧩 **Radix UI**
-- 🔀 **React Router DOM**
-
-</td>
-<td valign="top" width="33%">
-
-### ⚙️ Backend
-- 🟢 **Node.js**
-- 🚂 **Express.js**
-- 🍃 **MongoDB** (Mongoose)
-- 🔑 **JWT Auth**
-- 🍪 **Cookie Parser**
-- 🔌 **Socket.io**
-- ☁️ **Cloudinary**
-
-</td>
-<td valign="top" width="33%">
-
-### 🔒 Security
-- 🛡️ **Helmet**
-- 🚦 **Rate Limiting**
-- 🧹 **Mongo Sanitize**
-- 🔐 **XSS Protection**
-- 🔑 **bcrypt** Hashing
-- 🍪 **HTTP-Only Cookies**
-- 🔒 **Protected Routes**
-
-</td>
-</tr>
-</table>
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/codecsuman/instagram.git
-cd instagram
 ```
-
-### 2. Backend Setup
-
-```bash
-cd Backend
-npm install
+┌─────────────────────────────────────────────────────────────┐
+│                      FULL STACK OVERVIEW                    │
+├─────────────────┬───────────────────────────────────────────┤
+│  Frontend       │  React.js · Redux Toolkit · Redux Persist │
+│                 │  Tailwind CSS · Axios                     │
+│  Backend        │  Node.js · Express.js                     │
+│  Real-Time      │  Socket.io                                │
+│  Database       │  MongoDB Atlas · Mongoose ODM              │
+│  Auth           │  JSON Web Tokens (JWT) · bcrypt.js         │
+│  File Upload    │  Multer · Cloudinary                      │
+│  Deployment     │  Vercel (FE) · Render (BE)                │
+└─────────────────┴───────────────────────────────────────────┘
 ```
-
-Create a `.env` file in the `Backend/` directory:
-
-```env
-PORT=10000
-MONGO_URI=YOUR_MONGODB_URI
-SECRET_KEY=YOUR_SECRET_KEY
-CLIENT_URL=http://localhost:5173
-
-CLOUDINARY_CLOUD_NAME=YOUR_CLOUD_NAME
-CLOUDINARY_API_KEY=YOUR_API_KEY
-CLOUDINARY_API_SECRET=YOUR_API_SECRET
-
-NODE_ENV=development
-```
-
-Start the backend server:
-
-```bash
-npm run dev
-```
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
-```
-
-Create a `.env` file in the `frontend/` directory:
-
-```env
-VITE_API_URL=http://localhost:10000
-VITE_SOCKET_URL=http://localhost:10000
-```
-
-Start the frontend dev server:
-
-```bash
-npm run dev
-```
-
-> 🌐 Frontend runs at `http://localhost:5173` · Backend runs at `http://localhost:10000`
 
 ---
 
 ## 📁 Project Structure
 
 ```
-instagram/
+instagram-clone/
 │
-├── Backend/
-│   ├── controllers/        # Route logic & business rules
-│   ├── middlewares/        # Auth, error handling
-│   ├── models/             # Mongoose schemas
-│   ├── routes/             # API route definitions
-│   ├── socket/             # Socket.io event handlers
-│   ├── utils/              # Helper functions
-│   └── index.js            # Entry point
+├── 📂 frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── hooks/
+│   │   │   ├── useGetNotifications.js
+│   │   │   ├── useMarkNotificationsRead.js
+│   │   │   └── useGetConversations.js
+│   │   ├── redux/
+│   │   │   ├── rtnSlice.js
+│   │   │   └── store.js
+│   │   └── utils/
+│   └── package.json
 │
-├── frontend/
-│   ├── src/                # React components, pages, store
-│   ├── public/             # Static assets
+├── 📂 backend/
+│   ├── controllers/
+│   │   ├── notification.controller.js
+│   │   ├── post.controller.js
+│   │   ├── message.controller.js
+│   │   └── user.controller.js
+│   ├── models/
+│   │   └── notification.model.js
+│   ├── routes/
+│   │   └── notification.route.js
+│   ├── middleware/
+│   ├── index.js
 │   └── package.json
 │
 └── README.md
@@ -168,61 +191,157 @@ instagram/
 
 ---
 
-## 📡 API Reference
+## 🚀 Getting Started
 
-### 🔐 Authentication
+### Prerequisites
+
+```bash
+node --version   # v18+ recommended
+npm --version    # v9+
+```
+
+You'll also need accounts for:
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) — cloud database
+- [Cloudinary](https://cloudinary.com) — image hosting
+
+---
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/instagram-clone.git
+cd instagram-clone
+```
+
+### 2. Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file (see [Environment Variables](#-environment-variables)), then:
+
+```bash
+npm run dev
+# Server running at http://localhost:8000
+```
+
+### 3. Frontend Setup
+
+```bash
+cd ../frontend
+npm install
+npm run dev
+# App running at http://localhost:5173
+```
+
+---
+
+## 🔑 Environment Variables
+
+### Backend — `/backend/.env`
+
+```env
+PORT=8000
+MONGO_URI=your_mongodb_connection_string
+SECRET_KEY=your_jwt_secret_key
+CLOUD_NAME=your_cloudinary_cloud_name
+API_KEY=your_cloudinary_api_key
+API_SECRET=your_cloudinary_api_secret
+FRONTEND_URL=http://localhost:5173
+```
+
+### Frontend — `/frontend/.env`
+
+```env
+VITE_API_URL=http://localhost:8000/api/v1
+```
+
+> ⚠️ **Never commit `.env` files.** Add them to `.gitignore`.
+
+---
+
+## 🔔 API Reference — Notifications
 
 | Method | Endpoint | Description |
-|:---:|---|---|
-| `POST` | `/api/v1/user/register` | Register a new user |
-| `POST` | `/api/v1/user/login` | Login with credentials |
-| `GET` | `/api/v1/user/logout` | Logout current session |
-| `GET` | `/api/v1/user/profile` | Get current user profile |
+|---|---|---|
+| `GET` | `/api/v1/notification/all` | Fetch all notifications for the logged-in user |
+| `PATCH` | `/api/v1/notification/read` | Mark notification(s) as read |
 
-### 📷 Posts
+**Notification Types:** `like` · `comment` · `follow` · `message` · `post`
 
-| Method | Endpoint | Description |
-|:---:|---|---|
-| `POST` | `/api/v1/post/addpost` | Create a new post |
-| `GET` | `/api/v1/post/all` | Get all feed posts |
-| `POST` | `/api/v1/post/:id/like` | Like or unlike a post |
-| `POST` | `/api/v1/post/:id/comment` | Add a comment |
-| `DELETE` | `/api/v1/post/delete/:id` | Delete a post |
-
-### 💬 Messages
-
-| Method | Endpoint | Description |
-|:---:|---|---|
-| `POST` | `/api/v1/message/send/:id` | Send a message to a user |
-| `GET` | `/api/v1/message/all/:id` | Get conversation history |
+Notifications are created server-side via a shared `createNotification()` helper, saved to MongoDB for persistence, and emitted instantly over Socket.io so the client updates in real time — then stay available after a page refresh.
 
 ---
 
 ## ☁️ Deployment
 
-| Service | Platform | URL |
-|---|:---:|---|
-| 🎨 Frontend | Vercel | [instagram-ohuy.vercel.app](https://instagram-ohuy.vercel.app/) |
-| ⚙️ Backend | Render | [instagram-2-jhsg.onrender.com](https://instagram-2-jhsg.onrender.com) |
-| 🗄️ Database | MongoDB Atlas | Cloud-hosted |
+| Layer | Platform |
+|---|---|
+| 🌐 Frontend | [Vercel](https://vercel.com) |
+| ⚙️ Backend | [Render](https://render.com) |
+| 🗄️ Database | [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) |
+| 🖼️ Media | [Cloudinary](https://cloudinary.com) |
 
 ---
 
-## 👨‍💻 Developer
+## 🔮 Future Enhancements
+
+- [ ] 📖 Stories feature
+- [ ] 🎥 Reels / short video posts
+- [ ] 🔖 Saved posts
+- [ ] 🌙 Dark mode toggle
+- [ ] 📊 Analytics dashboard for profiles
+- [ ] 🔕 Notification preferences/settings
+- [ ] 👥 Group chats
+
+---
+
+## 👨‍💻 Author
 
 <div align="center">
 
-**Suman Jhanp**
+<br/>
 
-[![GitHub](https://img.shields.io/badge/GitHub-codecsuman-0f172a?style=for-the-badge&logo=github)](https://github.com/codecsuman)
+**Your Name**
 
-*Full-Stack Developer · MERN Stack · DSA Enthusiast*
+*MERN Stack Developer | Full-Stack Enthusiast*
+
+<br/>
+
+[![GitHub](https://img.shields.io/badge/GitHub-your--username-1f2937?style=for-the-badge&logo=github)](https://github.com/your-username)
+
+</div>
 
 ---
 
-If you found this project useful, please consider giving it a ⭐ star on GitHub!  
-It motivates continued development and open-source contributions. 🙏
+## 🤝 Contributing
 
-**Happy Coding! 🚀**
+Contributions, issues, and feature requests are welcome!
+
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add: your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+<br/>
+
+If this project helped you or sparked an idea — drop a ⭐ on the repo!
+
+<br/>
+
+**Happy Coding 🚀**
 
 </div>

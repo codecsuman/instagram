@@ -19,12 +19,24 @@ import socketReducer from "./socketSlice.js";
 
 // --------------------------------------------------
 // PERSIST CONFIG
-// persist only logged-in auth user
 // --------------------------------------------------
 const authPersistConfig = {
   key: "auth",
   storage,
   whitelist: ["user"],
+};
+
+const rtnPersistConfig = {
+  key: "rtn",
+  storage,
+  whitelist: ["notifications", "unreadCount"],
+};
+
+// Socket: DON'T persist socket instance (non-serializable)
+const socketPersistConfig = {
+  key: "socket",
+  storage,
+  blacklist: ["socket"],
 };
 
 // --------------------------------------------------
@@ -34,8 +46,8 @@ const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   post: postReducer,
   chat: chatReducer,
-  socket: socketReducer,
-  realTimeNotification: rtnReducer,
+  socket: persistReducer(socketPersistConfig, socketReducer),
+  realTimeNotification: persistReducer(rtnPersistConfig, rtnReducer),
 });
 
 // --------------------------------------------------
@@ -47,7 +59,16 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        ignoredActions: [
+          FLUSH,
+          REHYDRATE,
+          PAUSE,
+          PERSIST,
+          PURGE,
+          REGISTER,
+          "socket/setSocket",
+        ],
+        ignoredPaths: ["socket.socket"],
       },
     }),
 });

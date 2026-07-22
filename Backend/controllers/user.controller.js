@@ -5,6 +5,7 @@ import cloudinary from "../utils/cloudinary.js";
 import getDataUri from "../utils/datauri.js";
 import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
+import { createNotification } from "./notification.controller.js";
 import { io } from "../socket/socket.js";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -390,21 +391,15 @@ export const followOrUnfollow = async (req, res) => {
       targetUser.populate(postPopulateOptions),
     ]);
 
-    // Real-time follow notification
+    // Real-time follow notification (only on follow, not unfollow)
     if (action === "follow") {
-      const follower = await User.findById(followerId).select(
-        "username profilePicture",
-      );
-      const notification = {
+      await createNotification({
+        io,
+        recipientId: targetId,
+        senderId: followerId,
         type: "follow",
-        userId: followerId,
-        userDetails: follower,
-        postId: null,
-        message: "started following you",
-      };
-
-      io.to(targetId.toString()).emit("notification", notification);
-      console.log(`📢 Follow notification sent to user ${targetId}`);
+        messageText: "started following you",
+      });
     }
 
     return res.status(200).json({
