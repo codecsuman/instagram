@@ -1,70 +1,36 @@
 cat > README.md << 'EOF'
 <div align="center">
 
-# 🏥 Full-Stack Doctor Appointment Booking System (MERN Stack)
+<br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=800&color=3B82F6&center=true&vCenter=true&width=800&lines=%F0%9F%8F%A5+Doctor+Appointment+Booking+System;Full-Stack+MERN+Healthcare+Platform;Book+%E2%80%A2+Manage+%E2%80%A2+Consult+%E2%80%A2+Heal" alt="Typing SVG" />
+██╗███╗ ██╗███████╗████████╗ █████╗ ██████╗ ██████╗ █████╗ ███╗ ███╗
+██║████╗ ██║██╔════╝╚══██╔══╝██╔══██╗██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
+██║██╔██╗ ██║███████╗ ██║ ███████║██║ ███╗██████╔╝███████║██╔████╔██║
+██║██║╚██╗██║╚════██║ ██║ ██╔══██║██║ ██║██╔══██╗██╔══██║██║╚██╔╝██║
+██║██║ ╚████║███████║ ██║ ██║ ██║╚██████╔╝██║ ██║██║ ██║██║ ╚═╝ ██║
+╚═╝╚═╝ ╚═══╝╚══════╝ ╚═╝ ╚═╝ ╚═╝ ╚═════╝ ╚═╝ ╚═╝╚═╝ ╚═╝╚═╝ ╚═╝
+C L O N E
 
-<br />
 
-![MERN](https://img.shields.io/badge/MERN-Stack-00D9FF?style=for-the-badge&logo=mongodb&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)
-![PRs](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)
+### *Share moments. Connect instantly. Built on the MERN Stack.*
 
-<br />
+<br/>
 
-### 🩺 A **production-ready**, full-stack healthcare appointment platform
-*Book doctors instantly • Manage patients seamlessly • Powered by modern web tech*
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge&logoColor=white)](#)
+[![Backend API](https://img.shields.io/badge/⚙️%20Backend%20API-Render-10b981?style=for-the-badge)](#)
+[![GitHub Repo](https://img.shields.io/badge/📂%20GitHub-Repository-1f2937?style=for-the-badge&logo=github)](#)
 
-<br />
+<br/>
 
-```diff
-+ 🚀 Blazing Fast   + 🔒 Secure JWT Auth   + 💳 Stripe & Razorpay   + ☁️ Cloud Native
-```
-
-</div>
-
----
-
-<div align="center">
-
-## 🌍 Live Deployment
-
-<table>
-<tr>
-<td align="center" width="33%">
-
-### 👤 User Portal
-<a href="https://doctor-appointment-booking-roan.vercel.app/" target="_blank">
-  <img src="https://img.shields.io/badge/Visit%20Website-3b82f6?style=for-the-badge&logo=vercel&logoColor=white" />
-</a>
-<br /><br />
-<sub>Book appointments,<br />manage profile</sub>
-
-</td>
-<td align="center" width="33%">
-
-### 🛠 Admin Dashboard
-<a href="https://doctor-appointment-booking-tx26.vercel.app" target="_blank">
-  <img src="https://img.shields.io/badge/Open%20Dashboard-22c55e?style=for-the-badge&logo=vercel&logoColor=white" />
-</a>
-<br /><br />
-<sub>Manage doctors,<br />view analytics</sub>
-
-</td>
-<td align="center" width="33%">
-
-### ⚡ Backend API
-<a href="https://your-render-backend-url.onrender.com" target="_blank">
-  <img src="https://img.shields.io/badge/API%20Endpoint-a855f7?style=for-the-badge&logo=render&logoColor=white" />
-</a>
-<br /><br />
-<sub>REST API powered<br />by Node & Express</sub>
-
-</td>
-</tr>
-</table>
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![Redux](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=flat-square&logo=mongodb&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat-square&logo=socket.io&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
 
 </div>
 
@@ -72,438 +38,267 @@ cat > README.md << 'EOF'
 
 ## 📌 Table of Contents
 
-<details>
-<summary>Click to expand</summary>
-
-- [🎯 Overview](#-overview)
-- [✨ Key Features](#-key-features)
-- [🔮 Upcoming Features / Roadmap](#-upcoming-features--roadmap)
-- [🎨 Tech Stack](#-tech-stack)
-- [🏗️ Project Architecture](#️-project-architecture)
-- [📸 Screenshots](#-screenshots)
-- [⚙️ Environment Variables](#️-environment-variables)
-- [🚀 Getting Started](#-getting-started)
-- [📡 API Endpoints](#-api-endpoints)
-- [🚢 Deployment](#-deployment)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [👨‍💻 Author](#-author)
-
-</details>
+- [About the Project](#-about-the-project)
+- [Features](#-features)
+- [Tech Stack](#️-tech-stack)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [API Reference — Notifications](#-api-reference--notifications)
+- [API Reference — Search & Explore](#-api-reference--search--explore)
+- [API Reference — Posts](#-api-reference--posts)
+- [API Reference — Follow System](#-api-reference--follow-system)
+- [Deployment](#-deployment)
+- [Future Enhancements](#-future-enhancements)
+- [Author](#-author)
 
 ---
 
-## 🎯 Overview
+## 🎯 About the Project
 
-**Doctor Appointment Booking System** is a complete healthcare management platform where **patients** can discover doctors, book appointments, and manage their medical journey — while **admins** get a powerful dashboard to onboard doctors, monitor bookings, and analyze platform activity.
+**Instagram Clone** is a full-stack social media application built on the **MERN Stack**, letting users share photos, follow each other, like and comment on posts, chat in real time, and receive **persistent, real-time notifications** for every interaction.
 
-Built with the **MERN stack** (MongoDB, Express, React, Node.js), enhanced with **Cloudinary** for media, **Stripe & Razorpay** for payments, and deployed on **Vercel + Render**.
-
-> 💡 **Perfect for:** Clinics, hospitals, telemedicine startups, and portfolio projects showcasing full-stack expertise.
+> Built as a portfolio project to demonstrate full-stack development: REST API design, WebSocket-based real-time features, JWT authentication, and cloud media storage.
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-<div align="center">
-
-### 🧑‍⚕️ Patient Experience
-
-</div>
-
+### 👤 User Features
 | Feature | Description |
-| :--- | :--- |
-| 🔐 **Secure Auth** | JWT-based signup / login with encrypted passwords |
-| 🔍 **Doctor Discovery** | Browse doctors across multiple specialties with filters |
-| 📅 **Real-Time Booking** | Check live availability & book slots instantly |
-| 💳 **Online Payments** | Pay via **Stripe** or **Razorpay** (test mode enabled) |
-| 👤 **Profile Management** | Update personal info, upload photo, view history |
-| 📱 **Fully Responsive** | Flawless UX on mobile, tablet, and desktop |
+|---|---|
+| 🔐 **Secure Auth** | Registration & Login with JWT-protected sessions |
+| 🖼️ **Profile Management** | Bio, profile picture, followers/following |
+| 📸 **Post Creation** | Upload photos with captions via Cloudinary |
+| 🖼️ **Multi-Photo Upload** | Attach up to **10 photos** in a single post (carousel-style) |
+| ❤️ **Like & Comment** | Real-time interaction on posts |
+| 💬 **Direct Messaging** | Real-time 1:1 chat via Socket.io |
+| 🔍 **Search Page** | Search any user by **username** or **name** with live results |
+| 🧭 **Explore Page** | Browse and discover posts from every user on the platform |
+| 🔔 **Notifications** | Persistent, real-time alerts for likes, comments, follows, messages, and new posts |
+| 🔗 **Click-to-Redirect** | Clicking a notification (new message or new post) takes you straight to that message thread or post |
+| 🗄️ **Notification History** | Notifications are saved to MongoDB and survive page refreshes |
+| ✅ **Mark as Read** | Unread badge synced with backend, mark individual or all as read |
+| 👥 **Real-Time Follow Counts** | Follower / Following counts update live via Socket.io — no refresh needed |
+| 📱 **Responsive UI** | Works smoothly across all screen sizes |
 
-<br />
-
-<div align="center">
-
-### 🛠 Admin Superpowers
-
-</div>
-
-| Feature | Description |
-| :--- | :--- |
-| 🛡 **Protected Routes** | Admin-only access with credential-based JWT |
-| ➕ **Doctor Onboarding** | Add doctors with images, bio, fees, availability |
-| 📊 **Live Dashboard** | Track doctors, patients, and appointment stats |
-| ✅ **Appointment Control** | Cancel or mark appointments as completed |
-| 🖼 **Cloudinary CDN** | All images optimized & served globally |
-| 📈 **Analytics Ready** | Data-rich insights for platform growth |
-
----
-
-## 🔮 Upcoming Features / Roadmap
-
-<div align="center">
-
-![Status](https://img.shields.io/badge/Status-Planned-orange?style=for-the-badge)
-
-</div>
-
-| Feature | Description |
-| :--- | :--- |
-| 🔍 **Search Page** | Search any user by **username** or **name**, with instant results |
-| 🧭 **Explore Page** | Browse and explore posts from every user on the platform |
-| 🔔 **Smart Notifications** | Get notified for new messages and new posts from people you follow — clicking a notification redirects you straight to that message or post |
-| 🖼 **Multi-Photo Upload** | Upload up to **10 photos** in a single post |
-| 👥 **Real-Time Follow System** | Follower / Following counts update **live**, no refresh needed |
-
-### 🗺️ Planned Implementation Notes
-
-- **Search** → dedicated `/search` route + backend endpoint querying `username` and `name` fields (indexed for fast lookup)
-- **Explore** → `/explore` route pulling a paginated feed of all users' posts (infinite scroll recommended)
-- **Notifications** → new `Notification` model (type: `message` | `post`), triggered on post/message creation, delivered via **Socket.IO** for real-time push; each notification stores a reference `postId` / `messageId` for redirect-on-click
-- **Multi-Photo Upload** → `multer` config updated to accept an array field (`photos[]`, max 10), Cloudinary batch upload on the backend
-- **Real-Time Follow/Following** → **Socket.IO** event emitted on follow/unfollow, client listens and updates counts without a page reload
+### ⚙️ System Features
+- 🔒 JWT Authentication & protected routes
+- 🌐 RESTful API architecture
+- ⚡ Real-time updates via Socket.io (notifications, follow counts, messages)
+- 🗄️ MongoDB Atlas + Redux Persist for offline-safe state
+- ☁️ Cloudinary integration for multi-image uploads (up to 10 per post)
+- 🔔 Dual notification delivery — Socket (instant) + REST API (persistent)
 
 ---
 
-## 🎨 Tech Stack
+## 🛠️ Tech Stack
 
-<div align="center">
+┌─────────────────────────────────────────────────────────────┐
+│ FULL STACK OVERVIEW │
+├─────────────────┬───────────────────────────────────────────┤
+│ Frontend │ React.js · Redux Toolkit · Redux Persist │
+│ │ Tailwind CSS · Axios │
+│ Backend │ Node.js · Express.js │
+│ Real-Time │ Socket.io │
+│ Database │ MongoDB Atlas · Mongoose ODM │
+│ Auth │ JSON Web Tokens (JWT) · bcrypt.js │
+│ File Upload │ Multer · Cloudinary │
+│ Deployment │ Vercel (FE) · Render (BE) │
+└─────────────────┴───────────────────────────────────────────┘
 
-### 💠 Core Stack
-
-<img src="https://skillicons.dev/icons?i=react,nodejs,express,mongodb,tailwind,vite,vercel,git,github&perline=9" />
-
-<br /><br />
-
-<table>
-<tr>
-  <th>Layer</th>
-  <th>Technology</th>
-  <th>Purpose</th>
-</tr>
-<tr>
-  <td>🎨 <b>Frontend</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" />
-    <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" />
-    <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
-  </td>
-  <td>Modern, blazing-fast UI</td>
-</tr>
-<tr>
-  <td>⚙️ <b>Backend</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" />
-    <img src="https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white" />
-  </td>
-  <td>REST API & business logic</td>
-</tr>
-<tr>
-  <td>🗄 <b>Database</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white" />
-    <img src="https://img.shields.io/badge/Mongoose-880000?style=flat-square&logo=mongoose&logoColor=white" />
-  </td>
-  <td>Cloud database (Atlas)</td>
-</tr>
-<tr>
-  <td>🔐 <b>Auth</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white" />
-    <img src="https://img.shields.io/badge/bcrypt-004488?style=flat-square" />
-  </td>
-  <td>Secure token-based auth</td>
-</tr>
-<tr>
-  <td>☁️ <b>Media</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white" />
-    <img src="https://img.shields.io/badge/Multer-FF6C37?style=flat-square" />
-  </td>
-  <td>Image upload & CDN</td>
-</tr>
-<tr>
-  <td>💳 <b>Payments</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Stripe-635BFF?style=flat-square&logo=stripe&logoColor=white" />
-    <img src="https://img.shields.io/badge/Razorpay-02042B?style=flat-square&logo=razorpay&logoColor=white" />
-  </td>
-  <td>Gateway integrations</td>
-</tr>
-<tr>
-  <td>🚀 <b>Deployment</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" />
-    <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=white" />
-  </td>
-  <td>Frontend + Backend hosting</td>
-</tr>
-</table>
-
-</div>
-
----
-
-## 🏗️ Project Architecture
-
-
-📦 doctor-appointment-booking/
-│
-├── 🎨 frontend/ → Patient-facing React app (Vite + Tailwind)
-│ ├── src/
-│ │ ├── components/ → Reusable UI components
-│ │ ├── pages/ → Route-level pages
-│ │ ├── context/ → Global state (AppContext)
-│ │ └── assets/ → Images, icons, static files
-│ └── vite.config.js
-│
-├── 🛠 admin/ → Admin dashboard (Vite + Tailwind)
-│ ├── src/
-│ │ ├── components/
-│ │ ├── pages/Admin/ → Dashboard, DoctorList, AddDoctor
-│ │ ├── pages/Doctor/ → Doctor-specific views
-│ │ └── context/ → AdminContext, DoctorContext
-│ └── vite.config.js
-│
-├── ⚙️ backend/ → Node.js + Express REST API
-│ ├── config/ → mongodb.js, cloudinary.js
-│ ├── controllers/ → Route business logic
-│ ├── middlewares/ → authAdmin, authUser, multer
-│ ├── models/ → Mongoose schemas
-│ ├── routes/ → API endpoints
-│ └── server.js
-│
-└── 📄 README.md → You are here ✨
-
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-
-> 💡 *Add your project screenshots here for maximum visual impact*
-
-<table>
-<tr>
-<td align="center"><b>🏠 Homepage</b><br /><img src="https://via.placeholder.com/400x220/3b82f6/ffffff?text=Homepage" /></td>
-<td align="center"><b>👨‍⚕️ Doctors List</b><br /><img src="https://via.placeholder.com/400x220/14b8a6/ffffff?text=Doctors" /></td>
-</tr>
-<tr>
-<td align="center"><b>📅 Book Appointment</b><br /><img src="https://via.placeholder.com/400x220/f97316/ffffff?text=Booking" /></td>
-<td align="center"><b>🛠 Admin Dashboard</b><br /><img src="https://via.placeholder.com/400x220/a855f7/ffffff?text=Admin" /></td>
-</tr>
-</table>
-
-</div>
-
----
-
-## ⚙️ Environment Variables
-
-<details>
-<summary><b>🔵 Backend</b> — <code>backend/.env</code></summary>
-
-```env
-PORT=4000
-MONGODB_URI=your_mongodb_uri
-CLOUDINARY_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_key
-CLOUDINARY_SECRET_KEY=your_cloudinary_secret
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=your_admin_password
-JWT_SECRET=your_jwt_secret
-STRIPE_SECRET_KEY=your_stripe_key
-RAZORPAY_KEY_ID=your_razorpay_id
-RAZORPAY_KEY_SECRET=your_razorpay_secret
-FRONTEND_URL=https://doctor-appointment-booking-roan.vercel.app
-ADMIN_URL=https://doctor-appointment-booking-tx26.vercel.app
-```
-
-</details>
-
-<details>
-<summary><b>🟣 Frontend</b> — <code>frontend/.env</code></summary>
-
-```env
-VITE_BACKEND_URL=https://your-backend.onrender.com
-VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
-```
-
-</details>
-
-<details>
-<summary><b>🔴 Admin</b> — <code>admin/.env</code></summary>
-
-```env
-VITE_BACKEND_URL=https://your-backend.onrender.com
-```
-
-</details>
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to set up and run the project components on your local machine.
-
-### 📋 Prerequisites
-
-Make sure you have installed:
-
-![Node](https://img.shields.io/badge/Node.js-≥18.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)
-![npm](https://img.shields.io/badge/npm-≥9.0-CB3837?style=flat-square&logo=npm&logoColor=white)
-![Git](https://img.shields.io/badge/Git-latest-F05032?style=flat-square&logo=git&logoColor=white)
-
-### 📥 Clone the Repository
+### Prerequisites
 
 ```bash
-git clone https://github.com/your-username/full-stack-doctor-appointment-booking.git
-cd full-stack-doctor-appointment-booking
+node --version   # v18+ recommended
+npm --version    # v9+
 ```
 
-### 🧩 Install & Run — Step by Step
+You'll also need accounts for:
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) — cloud database
+- [Cloudinary](https://cloudinary.com) — image hosting
 
-<table>
-<tr>
-<th width="33%">⚙️ Backend</th>
-<th width="33%">🎨 Frontend</th>
-<th width="33%">🛠 Admin</th>
-</tr>
-<tr>
-<td>
+---
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/instagram-clone.git
+cd instagram-clone
+```
+
+### 2. Backend Setup
 
 ```bash
 cd backend
 npm install
-npm run dev
 ```
 
-Runs on **`:4000`**
-
-</td>
-<td>
+Create a `.env` file (see [Environment Variables](#-environment-variables)), then:
 
 ```bash
-cd frontend
-npm install
 npm run dev
+# Server running at http://localhost:8000
 ```
 
-Runs on **`:5173`**
-
-</td>
-<td>
+### 3. Frontend Setup
 
 ```bash
-cd admin
+cd ../frontend
 npm install
 npm run dev
+# App running at http://localhost:5173
 ```
-
-Runs on **`:5174`**
-
-</td>
-</tr>
-</table>
-
-> ✅ Make sure your `.env` files are configured in **all three** directories before starting.
 
 ---
 
-## 📡 API Endpoints
+## 🔑 Environment Variables
 
-<details>
-<summary><b>👤 User Routes</b> — <code>/api/user</code></summary>
+### Backend — `/backend/.env`
 
-| Method | Endpoint | Description | Auth |
-| :---: | :--- | :--- | :---: |
-| `POST` | `/register` | Create new user account | ❌ |
-| `POST` | `/login` | Authenticate user | ❌ |
-| `GET` | `/get-profile` | Fetch user profile | ✅ |
-| `POST` | `/update-profile` | Update user data | ✅ |
-| `POST` | `/book-appointment` | Book a doctor slot | ✅ |
-| `GET` | `/appointments` | List user appointments | ✅ |
-| `POST` | `/cancel-appointment` | Cancel appointment | ✅ |
-| `POST` | `/payment-stripe` | Stripe checkout | ✅ |
-| `POST` | `/payment-razorpay` | Razorpay checkout | ✅ |
+```env
+PORT=8000
+MONGO_URI=your_mongodb_connection_string
+SECRET_KEY=your_jwt_secret_key
+CLOUD_NAME=your_cloudinary_cloud_name
+API_KEY=your_cloudinary_api_key
+API_SECRET=your_cloudinary_api_secret
+FRONTEND_URL=http://localhost:5173
+MAX_PHOTOS_PER_POST=10
+```
 
-</details>
+### Frontend — `/frontend/.env`
 
-<details>
-<summary><b>👨‍⚕️ Doctor Routes</b> — <code>/api/doctor</code></summary>
+```env
+VITE_API_URL=http://localhost:8000/api/v1
+```
 
-| Method | Endpoint | Description | Auth |
-| :---: | :--- | :--- | :---: |
-| `GET` | `/list` | Get all doctors | ❌ |
-| `POST` | `/login` | Doctor login | ❌ |
-| `GET` | `/appointments` | Doctor's appointments | ✅ |
-| `POST` | `/complete-appointment` | Mark completed | ✅ |
-| `POST` | `/cancel-appointment` | Cancel appointment | ✅ |
-| `GET` | `/dashboard` | Doctor dashboard data | ✅ |
-
-</details>
-
-<details>
-<summary><b>🛡 Admin Routes</b> — <code>/api/admin</code></summary>
-
-| Method | Endpoint | Description | Auth |
-| :---: | :--- | :--- | :---: |
-| `POST` | `/login` | Admin login | ❌ |
-| `POST` | `/add-doctor` | Add a new doctor | ✅ |
-| `GET` | `/all-doctors` | List all doctors | ✅ |
-| `POST` | `/change-availability` | Toggle doctor availability | ✅ |
-| `GET` | `/appointments` | All appointments | ✅ |
-| `POST` | `/cancel-appointment` | Cancel any appointment | ✅ |
-| `GET` | `/dashboard` | Admin dashboard stats | ✅ |
-
-</details>
+> ⚠️ **Never commit `.env` files.** Add them to `.gitignore`.
 
 ---
 
-## 🚢 Deployment
+## 🔔 API Reference — Notifications
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/notification/all` | Fetch all notifications for the logged-in user |
+| `PATCH` | `/api/v1/notification/read` | Mark notification(s) as read |
+
+**Notification Types:** `like` · `comment` · `follow` · `message` · `post`
+
+Notifications are created server-side via a shared `createNotification()` helper, saved to MongoDB for persistence, and emitted instantly over Socket.io so the client updates in real time.
+
+Each notification stores a `referenceId` (`postId` or `conversationId`) so clicking it on the frontend routes the user directly to the relevant `/post/:id` or `/messages/:conversationId` page.
+
+---
+
+## 🔍 API Reference — Search & Explore
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/user/search?query=` | Search users by **username** or **name** |
+| `GET` | `/api/v1/post/explore` | Fetch paginated feed of posts from all users |
+
+---
+
+## 📸 API Reference — Posts
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/post/create` | Create a new post — accepts up to **10 photos** (`photos[]`) in a single request |
+| `GET` | `/api/v1/post/:id` | Get a single post by ID (used for notification redirects) |
+| `DELETE` | `/api/v1/post/:id` | Delete a post |
+
+> Multi-photo uploads are handled by `multer` (array field, max count 10) and batch-uploaded to Cloudinary before the post document is saved.
+
+---
+
+## 👥 API Reference — Follow System
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/user/follow/:id` | Follow a user — emits a Socket.io event to update counts in real time |
+| `POST` | `/api/v1/user/unfollow/:id` | Unfollow a user — emits a Socket.io event to update counts in real time |
+
+Both the follower's and the target user's clients listen for the `follow-update` Socket.io event and update their follower/following counts live, without a page refresh.
+
+---
+
+## ☁️ Deployment
+
+| Layer | Platform |
+|---|---|
+| 🌐 Frontend | [Vercel](https://vercel.com) |
+| ⚙️ Backend | [Render](https://render.com) |
+| 🗄️ Database | [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) |
+| 🖼️ Media | [Cloudinary](https://cloudinary.com) |
+
+---
+
+## 🔮 Future Enhancements
+
+- [ ] 📖 Stories feature
+- [ ] 🎥 Reels / short video posts
+- [ ] 🔖 Saved posts
+- [ ] 🌙 Dark mode toggle
+- [ ] 📊 Analytics dashboard for profiles
+- [ ] 🔕 Notification preferences/settings
+- [ ] 👥 Group chats
+
+---
+
+## 👨‍💻 Author
 
 <div align="center">
 
-| Service | Platform | Purpose |
-| :---: | :---: | :--- |
-| 👤 **User App** | [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com) | Static frontend hosting |
-| 🛠 **Admin App** | [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com) | Static admin hosting |
-| ⚡ **Backend** | [![Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?style=flat-square&logo=render)](https://render.com) | Node.js server runtime |
-| 🗄 **Database** | [![MongoDB](https://img.shields.io/badge/Hosted%20on-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas) | Managed MongoDB cluster |
-| ☁️ **Media** | [![Cloudinary](https://img.shields.io/badge/Powered%20by-Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white)](https://cloudinary.com) | Image CDN & storage |
+<br/>
+
+**Suman Jhanp**
+
+*MERN Stack Developer | Full-Stack Enthusiast*
+
+<br/>
+
+[![GitHub](https://img.shields.io/badge/GitHub-codecsuman-1f2937?style=for-the-badge&logo=github)](https://github.com/codecsuman)
+[![Portfolio](https://img.shields.io/badge/Portfolio-sumanjhanp.netlify.app-f59e0b?style=for-the-badge&logo=netlify)](https://sumanjhanp.netlify.app)
 
 </div>
-
-### 🛫 Quick Deploy Steps
-
-1. **MongoDB Atlas** → Create cluster → Copy connection URI
-2. **Cloudinary** → Get API credentials from dashboard
-3. **Render** → Deploy backend → Set env vars → Auto-deploy on push
-4. **Vercel** → Import frontend + admin repos → Configure env vars → Deploy 🚀
 
 ---
 
 ## 🤝 Contributing
 
-Contributions make the open-source community amazing! Any contributions are **greatly appreciated**. 💜
+Contributions, issues, and feature requests are welcome!
 
-```bash
-# 1. Fork the project
-# 2. Create your feature branch
-git checkout -b feature/AmazingFeature
-
-# 3. Commit your changes
-git commit -m "✨ Add some AmazingFeature"
-
-# 4. Push to the branch
-git push origin feature/AmazingFeature
-
-# 5. Open a Pull Request
-```
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add: your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+<br/>
+
+If this project helped you or sparked an idea — drop a ⭐ on the repo!
+
+<br/>
+
+**Made with ❤️ by Suman Jhanp**
+
+*Happy Coding 🚀*
+
+</div>
+EOF
